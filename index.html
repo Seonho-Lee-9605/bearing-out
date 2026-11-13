@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1f4e79">
+<title>베어링 출고관리</title>
+<style>
+:root{--p:#1f4e79;--bg:#f3f5f8;--out:#c0392b;--ok:#1b7f4b;--line:#dde2e8;--muted:#6b7683}
+*{box-sizing:border-box}
+body{margin:0;height:100vh;height:100dvh;display:flex;flex-direction:column;background:var(--bg);color:#1c2530;font-family:system-ui,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-size:16px}
+header{position:sticky;top:0;z-index:5;background:var(--p);color:#fff;padding:10px 14px 8px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sub{margin-top:6px;font-size:13px}
+.chip{background:rgba(255,255,255,.18);color:#fff;border:0;border-radius:16px;padding:6px 12px;font-size:14px}
+main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) clamp(116px,34%,300px);gap:10px;padding:10px 10px 0;width:100%;max-width:960px;margin:0 auto}
+.pane{display:flex;flex-direction:column;min-height:0}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:24px}
+#q{width:100%;padding:14px;font-size:18px;border:2px solid var(--line);border-radius:12px;background:#fff}
+#q:focus{outline:none;border-color:var(--p)}
+.muted{color:var(--muted);font-size:13px}
+#listTitle{margin:8px 2px 6px}
+.item{display:flex;width:100%;justify-content:space-between;align-items:center;gap:6px;text-align:left;background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 10px;margin-bottom:6px;font-size:14px}
+.item b{font-size:16px}
+.stock{min-width:42px;text-align:center;border-radius:8px;padding:5px 6px;background:#e8f1fa;color:var(--p);font-weight:700}
+.stock.low{background:#fdecea;color:var(--out)}
+h3{margin:8px 2px 6px;font-size:14px;color:var(--muted)}
+.h{font-size:13px;line-height:1.35;background:#fff;border-radius:10px;padding:8px 9px;margin-bottom:6px}
+.h .n{font-weight:700;font-size:14px;word-break:break-all}
+.tag-out{color:var(--out);font-weight:700}.tag-in{color:var(--ok);font-weight:700}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10;display:flex;align-items:flex-end;justify-content:center}
+.overlay.hidden{display:none}
+.panel{background:#fff;width:100%;max-width:640px;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto}
+.big{font-size:22px;font-weight:700}
+.seg{display:flex;gap:8px;margin:14px 0}
+.seg button{flex:1;padding:14px;font-size:18px;font-weight:700;border:2px solid var(--line);background:#fff;border-radius:12px;color:var(--muted)}
+.seg button.on.out{background:var(--out);border-color:var(--out);color:#fff}
+.seg button.on.in{background:var(--ok);border-color:var(--ok);color:#fff}
+.qty{display:flex;gap:8px;margin-bottom:12px}
+.qty button{width:64px;font-size:28px;border:2px solid var(--line);background:#fff;border-radius:12px}
+.qty input{flex:1;text-align:center;font-size:26px;font-weight:700;border:2px solid var(--line);border-radius:12px;min-width:0}
+.panel input[type=text],.panel input:not([type]){width:100%;padding:12px;font-size:16px;border:2px solid var(--line);border-radius:10px;margin-bottom:10px}
+.btns{display:flex;gap:8px;margin-top:6px}
+.btn{flex:1;padding:15px;font-size:17px;font-weight:700;border:0;border-radius:12px;background:var(--p);color:#fff}
+.btn.gray{flex:0 0 90px;background:#e6e9ee;color:#333}
+.btn.out{background:var(--out)}.btn.in{background:var(--ok)}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222;color:#fff;padding:11px 18px;border-radius:22px;font-size:15px;z-index:30;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90%;text-align:center}
+#toast.show{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <div class="row"><b>베어링 출고관리</b><button id="whoBtn" class="chip"></button></div>
+  <div class="row sub"><button id="stat" class="chip"></button><button id="syncBtn" class="chip">목록 새로고침</button></div>
+</header>
+<main>
+  <section class="pane">
+    <input id="q" type="search" placeholder="번호·규격 검색 (예: 6205)" autocomplete="off">
+    <div id="listTitle" class="muted"></div>
+    <div id="list" class="scroll"></div>
+  </section>
+  <section class="pane">
+    <h3>내 최근 입력</h3>
+    <div id="hist" class="scroll"></div>
+  </section>
+</main>
+
+<div id="sheet" class="overlay hidden">
+  <div class="panel">
+    <div id="sName" class="big"></div>
+    <div id="sSub" class="muted"></div>
+    <div class="seg"><button id="tOut" class="on out">출고</button><button id="tIn">반납</button></div>
+    <div class="qty"><button id="minus">−</button><input id="qty" type="number" inputmode="numeric" min="1" value="1"><button id="plus">＋</button></div>
+    <input id="equip" list="equipList" placeholder="설비/용도 (선택)"><datalist id="equipList"></datalist>
+    <input id="memo" placeholder="비고 (선택)">
+    <div class="btns"><button id="cancel" class="btn gray">닫기</button><button id="ok" class="btn out">출고 확인</button></div>
+  </div>
+</div>
+
+<div id="setup" class="overlay hidden">
+  <div class="panel">
+    <div class="big">작업자 설정</div>
+    <div class="muted" style="margin:6px 0 14px">한 번 입력하면 이 휴대폰에 저장되어 다음부터 묻지 않습니다.</div>
+    <input id="nameIn" placeholder="작업자 이름 (필수)" autocomplete="name">
+    <input id="pinIn" placeholder="반 공용 PIN" inputmode="numeric" autocomplete="off">
+    <div class="btns"><button id="setupCancel" class="btn gray">닫기</button><button id="setupOk" class="btn">저장</button></div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+// ▼ Apps Script 웹앱 배포 후 나오는 URL을 여기에 붙여넣으세요
+const API_URL = 'https://script.google.com/macros/s/AKfycbyzbla8RJueND_gMz-xC1i9XTT_G36TY7nuMazOFwmhFraHRE3mRqLDTaiKsE6_bcTd/exec';
+const CONFIGURED = API_URL.startsWith('https://');
+
+const LS = {items:'br_items',itemsAt:'br_items_at',queue:'br_queue',name:'br_name',pin:'br_pin',recent:'br_recent',hist:'br_hist',equips:'br_equips'};
+const load=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}};
+const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm=s=>String(s||'').toLowerCase().replace(/[\s\-_.×*]/g,'');
+const uuid=()=>(window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2,12);
+const p2=n=>String(n).padStart(2,'0');
+const nowStr=()=>{const d=new Date();return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}`};
+function fetchT(u,o={},ms=20000){const c=new AbortController();const t=setTimeout(()=>c.abort(),ms);return fetch(u,{...o,signal:c.signal}).finally(()=>clearTimeout(t));}
+
+let items=load(LS.items,[]), queue=load(LS.queue,[]), hist=load(LS.hist,[]);
+let name=load(LS.name,''), pin=load(LS.pin,'');
+let cur=null, type='출고', flushing=false, tt;
+
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2600);}
+function pending(code){return queue.filter(r=>r.code===code).reduce((a,r)=>a+(r.type==='출고'?-r.qty:r.qty),0);}
+function stockOf(it){return (isFinite(it.k)?Number(it.k):0)+pending(it.c);}
+
+function renderList(){
+  const q=$('q').value.trim();
+  let rows;
+  if(!items.length){
+    $('listTitle').textContent=CONFIGURED?'품목 목록이 없습니다. 인터넷 연결 후 "목록 새로고침"을 눌러주세요.':'API_URL 설정이 필요합니다 (설치 안내 참고).';
+    $('list').innerHTML='';return;
+  }
+  if(!q){
+    rows=items;
+    $('listTitle').textContent=`전체 ${items.length}종 · 위아래로 밀어서 찾기`;
+  }else{
+    const ts=q.split(/\s+/).map(norm).filter(Boolean);
+    rows=items.filter(i=>{const h=norm(i.c+i.n+i.s+i.l);return ts.every(t=>h.includes(t));});
+    $('listTitle').textContent=rows.length?`검색 결과 ${rows.length}건`:'일치하는 품목이 없습니다';
+  }
+  const st=$('list').scrollTop;
+  $('list').innerHTML=rows.map(i=>{const s=stockOf(i);return `<button class="item" data-c="${esc(i.c)}"><span><b>${esc(i.n)}</b><br><span class="muted">${esc(i.s)}${i.l?' · '+esc(i.l):''}</span></span><span class="stock ${s<=0?'low':''}">${s}</span></button>`}).join('');
+  $('list').scrollTop=st;
+}
+function renderStatus(){
+  $('whoBtn').textContent='👤 '+(name||'이름 설정');
+  $('stat').textContent=queue.length?`⏳ 전송 대기 ${queue.length}건 (눌러서 재전송)`:'✅ 모두 전송됨';
+  const at=load(LS.itemsAt,0);
+  if(at){const d=new Date(at);$('syncBtn').textContent=`목록 ${p2(d.getMonth()+1)}/${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())} ↻`;}
+}
+function renderHist(){
+  $('hist').innerHTML=hist.length?hist.map(h=>`<div class="h"><div class="muted">${esc(h.ts.slice(5,16))}</div><div class="n">${esc(h.n)}</div><div><span class="${h.type==='출고'?'tag-out':'tag-in'}">${h.type} ${h.qty}개</span> · ${esc(h.st)}</div></div>`).join(''):'<div class="muted">아직 입력한 내역이 없습니다.</div>';
+}
+function renderAll(){renderList();renderStatus();renderHist();}
+
+function setType(t){
+  type=t;
+  $('tOut').className=t==='출고'?'on out':'';
+  $('tIn').className=t==='반납'?'on in':'';
+  $('ok').className='btn '+(t==='출고'?'out':'in');
+  $('ok').textContent=t+' 확인';
+}
+function openSheet(it){
+  cur=it;setType('출고');
+  $('sName').textContent=it.n;
+  $('sSub').textContent=`${it.s||''}${it.l?' · 위치 '+it.l:''} · 현재 재고 ${stockOf(it)}`;
+  $('qty').value=1;$('equip').value='';$('memo').value='';
+  $('equipList').innerHTML=load(LS.equips,[]).map(e=>`<option value="${esc(e)}">`).join('');
+  $('sheet').classList.remove('hidden');
+}
+function closeSheet(){$('sheet').classList.add('hidden');cur=null;}
+function submit(){
+  if(!cur)return;
+  const qty=parseInt($('qty').value,10);
+  if(!(qty>0)){toast('수량을 확인하세요');return;}
+  if(!name){openSetup();return;}
+  if(type==='출고'&&qty>stockOf(cur)&&!confirm(`현재 재고(${stockOf(cur)})보다 많이 출고합니다. 계속할까요?`))return;
+  const rec={id:uuid(),ts:nowStr(),code:cur.c,name:cur.n,type,qty,worker:name,equip:$('equip').value.trim(),memo:$('memo').value.trim()};
+  queue.push(rec);save(LS.queue,queue);
+  hist.unshift({id:rec.id,ts:rec.ts,n:rec.name,type,qty,st:'대기'});hist=hist.slice(0,15);save(LS.hist,hist);
+  if(rec.equip){const eq=load(LS.equips,[]).filter(e=>e!==rec.equip);eq.unshift(rec.equip);save(LS.equips,eq.slice(0,15));}
+  closeSheet();$('q').value='';renderAll();
+  toast(`${rec.type} ${rec.qty}개 기록됨`);
+  flush();
+}
+
+async function fetchItems(manual){
+  if(!CONFIGURED){renderAll();return;}
+  try{
+    const r=await fetchT(API_URL+'?action=items&pin='+encodeURIComponent(pin));
+    const d=await r.json();
+    if(d.ok){items=d.items;save(LS.items,items);save(LS.itemsAt,Date.now());if(manual)toast('목록을 갱신했습니다');}
+    else if(d.error==='PIN'){toast('PIN이 맞지 않습니다');openSetup();}
+  }catch(e){if(manual)toast('인터넷 연결을 확인하세요 (저장된 목록 사용 중)');}
+  renderAll();
+}
+async function flush(manual){
+  if(!CONFIGURED)return;
+  if(!queue.length){if(manual)toast('보낼 내용이 없습니다');return;}
+  if(flushing)return;
+  flushing=true;let sent=false;
+  try{
+    while(queue.length){
+      const batch=queue.slice(0,30);
+      const r=await fetchT(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({pin,records:batch})});
+      const d=await r.json();
+      if(!d.ok){if(d.error==='PIN'){toast('PIN이 맞지 않습니다');openSetup();}break;}
+      const saved=d.saved||[],rej=d.rejected||[],done=new Set([...saved,...rej]);
+      queue=queue.filter(x=>!done.has(x.id));save(LS.queue,queue);
+      hist.forEach(h=>{if(saved.includes(h.id))h.st='완료';else if(rej.includes(h.id))h.st='거부됨';});save(LS.hist,hist);
+      sent=true;renderStatus();renderHist();
+      if(!done.size)break;
+    }
+  }catch(e){if(manual)toast('연결 실패 - 연결되면 자동으로 다시 전송됩니다');}
+  finally{flushing=false;renderAll();}
+  if(sent&&!queue.length)fetchItems(false);
+}
+
+function openSetup(){
+  $('nameIn').value=name;$('pinIn').value=pin;
+  $('setupCancel').style.display=name?'':'none';
+  $('setup').classList.remove('hidden');
+}
+function saveSetup(){
+  const n=$('nameIn').value.trim();
+  if(!n){toast('이름을 입력하세요');return;}
+  name=n;pin=$('pinIn').value.trim();
+  save(LS.name,name);save(LS.pin,pin);
+  $('setup').classList.add('hidden');renderAll();fetchItems(false);flush();
+}
+
+$('q').addEventListener('input',()=>{renderList();$('list').scrollTop=0;});
+$('list').addEventListener('click',e=>{const b=e.target.closest('.item');if(!b)return;const it=items.find(i=>i.c===b.dataset.c);if(it)openSheet(it);});
+$('tOut').onclick=()=>setType('출고');
+$('tIn').onclick=()=>setType('반납');
+$('minus').onclick=()=>{$('qty').value=Math.max(1,(parseInt($('qty').value,10)||1)-1);};
+$('plus').onclick=()=>{$('qty').value=(parseInt($('qty').value,10)||0)+1;};
+$('qty').addEventListener('focus',e=>e.target.select());
+$('cancel').onclick=closeSheet;
+$('ok').onclick=submit;
+$('whoBtn').onclick=openSetup;
+$('setupOk').onclick=saveSetup;
+$('setupCancel').onclick=()=>$('setup').classList.add('hidden');
+$('stat').onclick=()=>flush(true);
+$('syncBtn').onclick=()=>fetchItems(true);
+window.addEventListener('online',()=>{flush();fetchItems(false);});
+setInterval(()=>{if(queue.length)flush();},30000);
+
+renderAll();
+if(!name)openSetup();else{fetchItems(false);flush();}
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body>
+</html>
