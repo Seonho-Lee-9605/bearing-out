@@ -89,6 +89,7 @@ header{padding:14px 12px 10px}.chip{border-radius:8px;min-height:40px}
 #filterRow{display:flex;align-items:center;justify-content:space-between;margin-top:8px;background:#e6eef3;border-radius:8px;padding:7px;font-size:12px}#clearFilter{border:0;background:transparent;color:var(--p);padding:5px}
 #sSub{line-height:1.7;margin-top:6px}.stock-detail{display:inline-block;padding:2px 8px;border-radius:5px}
 @media(max-width:380px){main{gap:7px;padding:8px 8px 0}.brand b{font-size:15px}.item{padding:9px 7px}.item b{font-size:15px}}
+.history-note{font-size:11px;line-height:1.5;margin:0 2px 8px}.history-count{font-size:11px;font-weight:500}#hist .h{padding:10px 9px;border:1px solid var(--line);line-height:1.5}#hist .n{font-size:15px;overflow-wrap:anywhere;word-break:normal}#hist .history-action{font-size:13px;font-weight:650;margin:4px 0}#hist .history-person{font-size:13px;overflow-wrap:anywhere}#hist time{display:block;font-size:11px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -111,7 +112,7 @@ header{padding:14px 12px 10px}.chip{border-radius:8px;min-height:40px}
     <div id="list" class="scroll"></div>
   </section>
   <section class="pane">
-    <h3>내 최근 입력</h3>
+    <h3>최근 사용 이력 <span class="history-count">50건</span></h3><div id="historyNote" class="muted history-note" aria-live="polite"></div>
     <div id="hist" class="scroll"></div>
   </section>
 </main>
@@ -169,8 +170,8 @@ header{padding:14px 12px 10px}.chip{border-radius:8px;min-height:40px}
 <!-- 작업자/PIN 설정 -->
 <div id="setup" class="overlay hidden">
   <div class="panel">
-    <div class="big">이름 · PIN 로그인</div>
-    <div class="muted" style="margin:6px 0 14px">처음 한 번 이름과 PIN을 입력해주세요. 현장 PIN은 현장직 모드로, 관리자 PIN은 관리자 모드로 접속하며, 다음 방문에도 이 휴대폰에서 유지됩니다.</div>
+    <div class="big">작업자 설정</div>
+    <div class="muted" style="margin:6px 0 14px">한 번 입력하면 이 휴대폰에 저장되어 다음부터 묻지 않습니다.</div>
     <input id="nameIn" placeholder="작업자 이름 (필수)" autocomplete="name">
     <input id="pinIn" type="password" class="f" required placeholder="PIN (부여받은 PIN 입력해주세요.)" inputmode="numeric" autocomplete="off">
     <div class="btns"><button id="setupCancel" class="btn gray">닫기</button><button id="setupOk" class="btn">저장</button></div>
@@ -219,7 +220,7 @@ let cur=null, type='출고', flushing=false, adding=false, buySel=null, tt;
 let authorized=!!pin && load('br_verified_pin','')===pin, fetching=false, offlineReady=false;
 let failed=load('br_failed',[]);
 let category='', installPrompt=null;
-let retryAt=0,retryCount=0,retryReason='';
+let sharedHist=load('br_shared_hist',[]),historyAt=load('br_shared_hist_at',0),historyIssue='';
 const stockClass=n=>n<=0?'low':n<=4?'warn':'';
 const stockLabel=n=>n<=0?'재고 없음':n<=4?'재고 부족':'';
 
@@ -269,12 +270,18 @@ function renderStatus(){
   if(!authorized){$('stat').textContent='PIN 확인 필요';$('stat').className='chip status-error';}
   else if(!hist.some(h=>h.st==='완료')&&!queue.length&&!failed.length)$('stat').textContent='전송할 기록 없음';
   const at=load(LS.itemsAt,0);if(at){const d=new Date(at);$('syncBtn').textContent='재고 확인 '+p2(d.getHours())+':'+p2(d.getMinutes())+' ↻';}
-  if(authorized&&queue.length&&retryReason)$('stat').textContent='전송 대기 '+queue.length+'건 · '+retryReason;
 }
 
+function acceptHistory(d){
+ if(!Array.isArray(d.hist)){historyIssue='서버 업데이트 필요 · 이력 조회 불가';return;}
+ sharedHist=d.hist.filter(r=>['출고','반납','입고'].includes(r.type)).slice(0,50);historyAt=Date.now();historyIssue='';
+ try{save('br_shared_hist',sharedHist);save('br_shared_hist_at',historyAt);}catch(e){historyIssue='이력은 조회했지만 기기 보관 실패';}
+}
 function renderHist(){
- const failures=failed.map(h=>'<div class="h status-error"><div class="n">'+esc(h.name||h.code)+'</div><b>확인 필요</b><div>'+esc(h.message)+'</div></div>').join('');
- $('hist').innerHTML=failures+hist.map(h=>'<div class="h '+(h.st==='완료'?'status-ok':h.st==='거부됨'?'status-error':'status-wait')+'"><div class="muted">'+esc(h.ts.slice(5,16))+'</div><div class="n">'+esc(h.n)+'</div><div>'+esc(h.type)+' '+h.qty+'개</div><b>'+(h.st==='완료'?'서버 저장 완료':h.st==='거부됨'?'확인 필요':'전송 대기')+'</b></div>').join('')||'<div class="muted">첫 사용입니다.<br>기록하면 여기에 표시됩니다.</div>';
+ if(!authorized){$('hist').innerHTML='';$('historyNote').textContent='PIN 확인 후 표시됩니다.';return;}
+ const at=historyAt?new Date(historyAt):null;
+ $('historyNote').textContent=historyIssue||(at?'전체 작업자 · '+p2(at.getHours())+':'+p2(at.getMinutes())+' 확인 · 화면 사용 중 약 1분 간격 갱신':'전체 작업자 · 이력 확인 중');
+ $('hist').innerHTML=sharedHist.map(r=>'<article class="h"><div class="n">'+esc(r.n)+'</div><div class="history-action '+(r.type==='출고'?'tag-out':'tag-in')+'">'+esc(r.type==='입고'?'구매입고':r.type)+' '+esc(r.qty)+'개</div><div class="history-person">'+esc(r.w||'이름 미기록')+'</div><time>'+esc(r.ts)+'</time></article>').join('')||'<div class="empty-hint">'+(historyAt?'저장된 사용 이력이 없습니다.':'서버 이력을 확인해주세요.')+'</div>';
 }
 
 function renderAll(){renderList();renderStatus();renderHist();}
@@ -400,18 +407,15 @@ async function submitAdd(){
 async function fetchItems(manual){
  if(!CONFIGURED||!authorized||flushing||fetching)return;
  fetching=true;
- try{const d=await post({pin,action:'items'});if(d.ok){items=d.items;save(LS.items,items);save(LS.itemsAt,Date.now());role=d.role||'field';save(LS.role,role);if(manual)toast('서버 재고를 확인했습니다');}else if(d.error==='PIN'){authorized=false;showError('접근 실패','PIN이 없거나 맞지 않습니다. PIN을 다시 입력해주세요.');openSetup();}}
- catch(e){if(manual)toast('연결 또는 기기 저장 실패 · 마지막 확인 재고 표시');}
+ try{const d=await post({pin,action:'items'});if(d.ok){acceptHistory(d);items=d.items;save(LS.items,items);save(LS.itemsAt,Date.now());role=d.role||'field';save(LS.role,role);if(manual)toast('서버 재고를 확인했습니다');}else if(d.error==='PIN'){authorized=false;showError('접근 실패','PIN이 없거나 맞지 않습니다. PIN을 다시 입력해주세요.');openSetup();}}
+ catch(e){historyIssue='연결 확인 필요 · 마지막 조회 이력';if(manual)toast('연결 또는 기기 저장 실패 · 마지막 확인 재고 표시');}
  finally{fetching=false;renderAll();}
 }
 async function flush(manual){
  if(!CONFIGURED||!authorized||flushing||fetching)return;
- if(!queue.length){await fetchItems(false);return;}
- if(!manual&&Date.now()<retryAt)return;
  flushing=true;let sent=false;
  try{while(queue.length){
-   const batch=queue.slice(0,30),d=await post({pin,records:batch},45000);
-   if(!d.ok){retryCount++;retryAt=Date.now()+Math.min(300000,30000*2**Math.min(retryCount-1,4))+Math.random()*5000;retryReason=d.error==='BUSY'?'서버 사용 중':d.error==='PIN'?'PIN 재확인 필요':'서버 저장 확인 필요';}
+   const batch=queue.slice(0,30),d=await post({pin,records:batch});
    if(!d.ok){if(d.error==='PIN'){authorized=false;showError('접근 실패','PIN을 입력하고 확인해주세요.');openSetup();}else if(manual)showError('전송 대기',d.msg||'저장을 확인하지 못했습니다. 기록을 보관하고 재전송합니다.');break;}
    const saved=d.saved||[],rejected=(d.rejected||[]).map(r=>typeof r==='string'?{id:r,message:'확인 필요 · 관리자에게 문의해주세요.'}:r);
    const done=new Set([...saved,...rejected.map(r=>r.id)]);if(!done.size)break;
@@ -419,13 +423,13 @@ async function flush(manual){
    // Persist failure details BEFORE removing anything from the durable outbox.
    save('br_failed',nextFailed);const next=queue.filter(x=>!done.has(x.id));save(LS.queue,next);failed=nextFailed;queue=next;
    hist.forEach(h=>{if(saved.includes(h.id))h.st='완료';else if(rejected.some(r=>r.id===h.id))h.st='거부됨';});save(LS.hist,hist);
-   sent=true;retryCount=0;retryAt=0;retryReason='';renderAll();if(rejected.length)showError('확인 필요',rejected.map(r=>r.message||'관리자에게 문의해주세요.').join('\n'));
- }}catch(e){retryCount++;retryAt=Date.now()+Math.min(300000,30000*2**Math.min(retryCount-1,4))+Math.random()*5000;retryReason='응답 확인 필요';if(manual)showError('전송 대기','서버 응답 또는 기기 저장을 확인하지 못했습니다. 같은 기록 번호로 다시 전송합니다.');}
+   sent=true;renderAll();if(rejected.length)showError('확인 필요',rejected.map(r=>r.message||'관리자에게 문의해주세요.').join('\n'));
+ }}catch(e){if(manual)showError('전송 대기','서버 응답 또는 기기 저장을 확인하지 못했습니다. 같은 기록 번호로 다시 전송합니다.');}
  finally{flushing=false;renderAll();}
- if(authorized&&sent&&!queue.length)await fetchItems(false);
+ if(authorized)await fetchItems(false);
 }
 function openSetup(){
- if(authorized&&(queue.length||flushing||fetching)){toast('전송 대기 기록과 진행 중 처리를 완료한 뒤 전환해주세요.');return;}
+ if(queue.length||flushing||fetching){toast('전송 대기 기록과 진행 중 처리를 완료한 뒤 전환해주세요.');return;}
  $('nameIn').value=name;$('pinIn').value='';$('setupCancel').style.display=authorized?'':'none';$('setup').classList.remove('hidden');
 }
 async function saveSetup(){
@@ -435,7 +439,7 @@ async function saveSetup(){
  if(flushing||fetching){toast('처리 중입니다. 잠시 후 다시 시도해주세요.');return;}
  $('setupOk').disabled=true;
  try{const d=await post({pin:np,action:'items'});if(!d.ok){showError('접근 실패','PIN이 맞지 않습니다. 관리자에게 문의해주세요.');return;}
- save(LS.name,n);save(LS.pin,np);save('br_verified_pin',np);name=n;pin=np;authorized=true;role=d.role||'field';items=d.items;save(LS.role,role);save(LS.items,items);save(LS.itemsAt,Date.now());$('setup').classList.add('hidden');renderAll();await flush();
+ save(LS.name,n);save(LS.pin,np);save('br_verified_pin',np);name=n;pin=np;authorized=true;role=d.role||'field';acceptHistory(d);items=d.items;save(LS.role,role);save(LS.items,items);save(LS.itemsAt,Date.now());$('setup').classList.add('hidden');renderAll();await flush();
  }catch(e){showError('접근 확인 실패','최초 PIN 확인에는 인터넷과 기기 저장이 필요합니다. 연결 상태를 확인해주세요.');}
  finally{$('setupOk').disabled=false;}
 }
@@ -490,10 +494,11 @@ $('errOk').onclick=()=>$('err').classList.add('hidden');
 $('whoBtn').onclick=()=>openSetup();
 $('setupOk').onclick=saveSetup;
 $('setupCancel').onclick=()=>$('setup').classList.add('hidden');
-$('stat').onclick=()=>{if(failed.length)showError('확인 필요',failed.map(r=>(r.name||r.code)+' · '+r.message).join('\n'));flush(true);};
+$('stat').onclick=()=>{if(failed.length)showError('확인 필요',failed.map(r=>(r.name||r.code)+' · '+r.message).join('\n'));else if(queue.length)showError('이 기기의 전송 대기',queue.map(r=>(r.name||r.code)+' · '+r.type+' '+r.qty+'개').join('\n'));flush(true);};
 $('syncBtn').onclick=()=>fetchItems(true);
 window.addEventListener('online',()=>flush());
-setInterval(()=>{if(queue.length)flush();},30000);
+setInterval(()=>{if(queue.length)flush();else if(document.visibilityState==='visible'&&Date.now()-historyAt>=60000)fetchItems(false);},30000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-historyAt>=60000){if(queue.length)flush();else fetchItems(false);}});
 
 queue.forEach(r=>{if(!hist.some(h=>h.id===r.id))hist.unshift({id:r.id,c:r.code,ts:r.ts||'',n:r.name||r.code,type:r.type,qty:r.qty,st:'대기'});});
 renderAll();
@@ -502,5 +507,4 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').the
 </script>
 </body>
 </html>
-
 
