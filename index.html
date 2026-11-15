@@ -252,7 +252,7 @@ function renderList(){
     const recent=[...new Set(hist.filter(h=>h.st==='완료').map(h=>h.c).filter(Boolean))].slice(0,8);
     rows=recent.map(c=>items.find(i=>i.c===c)).filter(Boolean);
     $('listTitle').textContent=rows.length?'이 기기의 최근 사용 · '+rows.length+'종':'등록 '+items.length+'종 · 품번이나 위치로 검색하세요';
-    if(!rows.length){$('list').innerHTML='<div class="empty-hint"><b>어떤 베어링이 필요하세요?</b><p>위 검색창에 품번 또는 위치를 입력하세요.</p><p>예: 6205 · A-1</p><small>사용 후에는 최근 품목이 여기에 표시됩니다.</small></div>';return;}
+    if(!rows.length){$('list').innerHTML='<div class="empty-hint"><b>어떤 베어링이 필요하세요?</b><p>위 검색창에 품번 또는 위치를 입력하세요.</p><p>예: 6205</p><small>최근 품목이 여기에 표시됩니다.</small></div>';return;}
   }else{
     rows=searchItems(q).filter(i=>!category||(category==='other'?!catOf(i.c):catOf(i.c)?.p===category));
     $('listTitle').textContent=rows.length?`검색 결과 ${rows.length}건`:'일치하는 품목이 없습니다';
