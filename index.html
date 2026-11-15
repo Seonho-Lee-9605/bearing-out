@@ -23,7 +23,7 @@ header{position:sticky;top:0;z-index:5;background:var(--p);color:#fff;padding:10
 .chip{background:rgba(255,255,255,.18);color:#fff;border:0;border-radius:16px;padding:6px 12px;font-size:14px}
 #adminBar{display:none;gap:8px;margin-top:8px}
 #adminBar .chip{flex:1;background:#fff;color:var(--p);font-weight:700;padding:10px 8px;font-size:15px}
-main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) clamp(116px,34%,300px);gap:10px;padding:10px 10px 0;width:100%;max-width:960px;margin:0 auto}
+main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) clamp(150px,40%,320px);gap:10px;padding:10px 10px 0;width:100%;max-width:960px;margin:0 auto}
 .pane{display:flex;flex-direction:column;min-height:0}
 .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:24px}
 #q{width:100%;padding:14px;font-size:18px;border:2px solid var(--line);border-radius:12px;background:#fff}
@@ -34,10 +34,16 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) clamp(
 .item b{font-size:16px}
 .stock{min-width:42px;text-align:center;border-radius:8px;padding:5px 6px;background:#e8f1fa;color:var(--p);font-weight:700}
 .stock.low{background:#fdecea;color:var(--out)}
-h3{margin:8px 2px 6px;font-size:14px;color:var(--muted)}
-.h{font-size:13px;line-height:1.35;background:#fff;border-radius:10px;padding:8px 9px;margin-bottom:6px}
-.h .n{font-weight:700;font-size:14px;word-break:break-all}
-.tag-out{color:var(--out);font-weight:700}.tag-in{color:var(--ok);font-weight:700}
+h3{margin:10px 2px 2px;font-size:16px;color:#33404d}
+.h{background:#fff;border-radius:10px;border-left:5px solid var(--line);padding:8px 9px;margin-bottom:7px;line-height:1.4}
+.h .n{font-weight:700;font-size:15px;word-break:break-all}
+.h .tg{display:inline-block;margin:3px 0;padding:2px 9px;border-radius:10px;font-size:13px;font-weight:700;color:#fff}
+.h .w{font-size:14px;font-weight:600;word-break:break-all}
+.h .t{font-size:12.5px;color:var(--muted)}
+.h.t-out{border-left-color:var(--out)}.h.t-out .tg{background:var(--out)}
+.h.t-ret{border-left-color:var(--ok)}.h.t-ret .tg{background:var(--ok)}
+.h.t-buy{border-left-color:var(--p)}.h.t-buy .tg{background:var(--p)}
+.h.wait{opacity:.65;border-left-style:dashed}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10;display:flex;align-items:flex-end;justify-content:center}
 .overlay.center{align-items:center;padding:20px;z-index:20}
 .panel{background:#fff;width:100%;max-width:640px;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto}
@@ -77,12 +83,13 @@ h3{margin:8px 2px 6px;font-size:14px;color:var(--muted)}
 </header>
 <main>
   <section class="pane">
-    <input id="q" type="search" placeholder="번호·규격 검색 (예: 6205)" autocomplete="off">
+    <input id="q" type="search" placeholder="번호·규격 검색" autocomplete="off">
     <div id="listTitle" class="muted"></div>
     <div id="list" class="scroll"></div>
   </section>
   <section class="pane">
-    <h3>내 최근 입력</h3>
+    <h3>최근 사용 이력</h3>
+    <div id="histSub" class="muted" style="margin:0 2px 7px"></div>
     <div id="hist" class="scroll"></div>
   </section>
 </main>
@@ -143,7 +150,7 @@ h3{margin:8px 2px 6px;font-size:14px;color:var(--muted)}
     <div class="big">작업자 설정</div>
     <div class="muted" style="margin:6px 0 14px">한 번 입력하면 이 휴대폰에 저장되어 다음부터 묻지 않습니다.</div>
     <input id="nameIn" placeholder="작업자 이름 (필수)" autocomplete="name">
-    <input id="pinIn" placeholder="PIN (부여받은 PIN 입력)" inputmode="numeric" autocomplete="off">
+    <input id="pinIn" placeholder="PIN (현장 PIN / 관리자는 관리자 PIN)" inputmode="numeric" autocomplete="off">
     <div class="btns"><button id="setupCancel" class="btn gray">닫기</button><button id="setupOk" class="btn">저장</button></div>
   </div>
 </div>
@@ -172,7 +179,7 @@ const CATS = [
   {p:'UBH',n:'유니트베어링 하우징'}
 ];
 
-const LS = {items:'br_items',itemsAt:'br_items_at',queue:'br_queue',name:'br_name',pin:'br_pin',role:'br_role',hist:'br_hist',equips:'br_equips'};
+const LS = {items:'br_items',itemsAt:'br_items_at',queue:'br_queue',name:'br_name',pin:'br_pin',role:'br_role',hist:'br_hist2',histAt:'br_hist_at',equips:'br_equips'};
 const load=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}};
 const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 const $=id=>document.getElementById(id);
@@ -186,7 +193,7 @@ const post=(obj,ms)=>fetchT(API_URL,{method:'POST',headers:{'Content-Type':'text
 
 let items=load(LS.items,[]), queue=load(LS.queue,[]), hist=load(LS.hist,[]);
 let name=load(LS.name,''), pin=load(LS.pin,''), role=load(LS.role,'field');
-let cur=null, type='출고', flushing=false, adding=false, buySel=null, tt;
+let cur=null, type='출고', flushing=false, adding=false, buySel=null, lastSync=0, tt;
 
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2800);}
 function pending(code){return queue.filter(r=>r.code===code).reduce((a,r)=>a+(r.type==='출고'?-r.qty:r.qty),0);}
@@ -229,15 +236,25 @@ function renderStatus(){
   const at=load(LS.itemsAt,0);
   if(at){const d=new Date(at);$('syncBtn').textContent=`목록 ${p2(d.getMonth()+1)}/${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())} ↻`;}
 }
+// 최근 사용 이력 = 서버의 전체 작업자 이력(hist) 앞에, 아직 전송 전인 내 입력(queue)을 붙여서 최대 50건
+const fmtTs=ts=>{const m=/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(ts||'');return m?`${m[2]}/${m[3]} ${m[4]}:${m[5]}`:esc(ts||'');};
+function histRows(){
+  const ids=new Set(hist.map(h=>h.id));
+  const mine=queue.filter(r=>!ids.has(r.id)).reverse().map(r=>({id:r.id,ts:r.ts,n:r.name,type:r.type,qty:r.qty,w:r.worker,wait:true}));
+  return mine.concat(hist).slice(0,50);
+}
 function renderHist(){
-  $('hist').innerHTML=hist.length?hist.map(h=>`<div class="h"><div class="muted">${esc(h.ts.slice(5,16))}</div><div class="n">${esc(h.n)}</div><div><span class="${h.type==='출고'?'tag-out':'tag-in'}">${h.type} ${h.qty}개</span> · ${esc(h.st)}</div></div>`).join(''):'<div class="muted">아직 입력한 내역이 없습니다.</div>';
+  const rows=histRows();
+  const at=load(LS.histAt,0);
+  $('histSub').textContent=at?`모든 작업자 · ${p2(new Date(at).getHours())}:${p2(new Date(at).getMinutes())} 기준 ${rows.length}건`:'모든 작업자 · 목록 새로고침으로 불러오기';
+  const cls={출고:'t-out',반납:'t-ret',입고:'t-buy'};
+  $('hist').innerHTML=rows.length?rows.map(h=>`<div class="h ${cls[h.type]||''}${h.wait?' wait':''}"><div class="n">${esc(h.n)}</div><span class="tg">${esc(h.type)} ${h.qty}개</span>${h.wait?' <span class="muted">전송 대기</span>':''}<div class="w">${esc(h.w)}</div><div class="t">${fmtTs(h.ts)}</div></div>`).join(''):'<div class="muted">아직 사용 이력이 없습니다.</div>';
 }
 function renderAll(){renderList();renderStatus();renderHist();}
 
 // 전송 대기열에 넣고 화면 갱신 (출고/반납/입고 공통)
 function enqueue(rec){
   queue.push(rec);save(LS.queue,queue);
-  hist.unshift({id:rec.id,ts:rec.ts,n:rec.name,type:rec.type,qty:rec.qty,st:'대기'});hist=hist.slice(0,15);save(LS.hist,hist);
   renderAll();
   toast(`${rec.type} ${rec.qty}개 기록됨`);
   flush();
@@ -356,6 +373,7 @@ async function fetchItems(manual){
     const d=await post({pin,action:'items'});
     if(d.ok){
       items=d.items;save(LS.items,items);save(LS.itemsAt,Date.now());
+      hist=d.hist||[];save(LS.hist,hist);save(LS.histAt,Date.now());lastSync=Date.now();
       role=d.role||'field';save(LS.role,role);
       if(manual)toast('목록을 갱신했습니다');
     }
@@ -375,7 +393,7 @@ async function flush(manual){
       if(!d.ok){if(d.error==='PIN'){toast('PIN이 맞지 않습니다');openSetup();}break;}
       const saved=d.saved||[],rej=d.rejected||[],done=new Set([...saved,...rej]);
       queue=queue.filter(x=>!done.has(x.id));save(LS.queue,queue);
-      hist.forEach(h=>{if(saved.includes(h.id))h.st='완료';else if(rej.includes(h.id))h.st='거부됨';});save(LS.hist,hist);
+      if(rej.length)toast(`${rej.length}건이 거부되었습니다 (권한·품목을 확인하세요)`);
       sent=true;renderStatus();renderHist();
       if(!done.size)break;
     }
@@ -434,6 +452,9 @@ $('stat').onclick=()=>flush(true);
 $('syncBtn').onclick=()=>fetchItems(true);
 window.addEventListener('online',()=>{flush();fetchItems(false);});
 setInterval(()=>{if(queue.length)flush();},30000);
+// 다른 사람의 사용 내역이 보이도록: 앱을 다시 열 때(30초 이상 지났으면)와 화면을 보고 있는 동안 3분마다 자동 갱신
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-lastSync>30000)fetchItems(false);});
+setInterval(()=>{if(!document.hidden&&Date.now()-lastSync>170000)fetchItems(false);},60000);
 
 renderAll();
 if(!name)openSetup();else{fetchItems(false);flush();}
