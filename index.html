@@ -173,7 +173,7 @@ header{padding:14px 12px 10px}.chip{border-radius:8px;min-height:40px}
     <div class="big">작업자 설정</div>
     <div class="muted" style="margin:6px 0 14px">한 번 입력하면 이 휴대폰에 저장되어 다음부터 묻지 않습니다.</div>
     <input id="nameIn" placeholder="작업자 이름 (필수)" autocomplete="name">
-    <input id="pinIn" type="password" class="f" required placeholder="PIN (부여받은 PIN 입력해주세요.)" inputmode="numeric" autocomplete="off">
+    <input id="pinIn" type="password" class="f" required placeholder="PIN (부여받은 PIN을 입력해주세요! )" inputmode="numeric" autocomplete="off">
     <div class="btns"><button id="setupCancel" class="btn gray">닫기</button><button id="setupOk" class="btn">저장</button></div>
   </div>
 </div>
@@ -281,7 +281,7 @@ function renderHist(){
  if(!authorized){$('hist').innerHTML='';$('historyNote').textContent='PIN 확인 후 표시됩니다.';return;}
  const at=historyAt?new Date(historyAt):null;
  $('historyNote').textContent=historyIssue||(at?'전체 작업자 · '+p2(at.getHours())+':'+p2(at.getMinutes())+' 확인 · 화면 사용 중 약 1분 간격 갱신':'전체 작업자 · 이력 확인 중');
- $('hist').innerHTML=sharedHist.map(r=>'<article class="h"><div class="n">'+esc(r.n)+'</div><div class="history-action '+(r.type==='출고'?'tag-out':'tag-in')+'">'+esc(r.type==='입고'?'구매입고':r.type)+' '+esc(r.qty)+'개</div><div class="history-person">'+esc(r.w||'이름 미기록')+'</div><time>'+esc(r.ts)+'</time></article>').join('')||'<div class="empty-hint">'+(historyAt?'저장된 사용 이력이 없습니다.':'서버 이력을 확인해주세요.')+'</div>';
+ $('hist').innerHTML=sharedHist.map(r=>'<article class="h"><div class="n">'+esc(r.n)+'</div><div class="history-action '+(r.type==='출고'?'tag-out':'tag-in')+'">'+esc(r.type==='입고'?'구매입고':r.type)+' '+esc(r.qty)+'개</div><div class="history-person">'+esc(r.w||'이름 미기록')+'</div>'+(String(r.equip||'').trim()?'<div class="history-person">설비/용도: '+esc(r.equip)+'</div>':'')+'<time>'+esc(r.ts)+'</time></article>').join('')||'<div class="empty-hint">'+(historyAt?'저장된 사용 이력이 없습니다.':'서버 이력을 확인해주세요.')+'</div>';
 }
 
 function renderAll(){renderList();renderStatus();renderHist();}
