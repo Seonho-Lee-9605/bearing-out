@@ -23,7 +23,7 @@ header{position:sticky;top:0;z-index:5;background:var(--p);color:#fff;padding:10
 .chip{background:rgba(255,255,255,.18);color:#fff;border:0;border-radius:16px;padding:6px 12px;font-size:14px}
 #adminBar{display:none;gap:8px;margin-top:8px}
 #adminBar .chip{flex:1;background:#fff;color:var(--p);font-weight:700;padding:10px 8px;font-size:15px}
-main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) clamp(150px,40%,320px);gap:10px;padding:10px 10px 0;width:100%;max-width:960px;margin:0 auto}
+main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) clamp(116px,34%,300px);gap:10px;padding:10px 10px 0;width:100%;max-width:960px;margin:0 auto}
 .pane{display:flex;flex-direction:column;min-height:0}
 .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:24px}
 #q{width:100%;padding:14px;font-size:18px;border:2px solid var(--line);border-radius:12px;background:#fff}
@@ -34,16 +34,10 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) clamp(
 .item b{font-size:16px}
 .stock{min-width:42px;text-align:center;border-radius:8px;padding:5px 6px;background:#e8f1fa;color:var(--p);font-weight:700}
 .stock.low{background:#fdecea;color:var(--out)}
-h3{margin:10px 2px 2px;font-size:16px;color:#33404d}
-.h{background:#fff;border-radius:10px;border-left:5px solid var(--line);padding:8px 9px;margin-bottom:7px;line-height:1.4}
-.h .n{font-weight:700;font-size:15px;word-break:break-all}
-.h .tg{display:inline-block;margin:3px 0;padding:2px 9px;border-radius:10px;font-size:13px;font-weight:700;color:#fff}
-.h .w{font-size:14px;font-weight:600;word-break:break-all}
-.h .t{font-size:12.5px;color:var(--muted)}
-.h.t-out{border-left-color:var(--out)}.h.t-out .tg{background:var(--out)}
-.h.t-ret{border-left-color:var(--ok)}.h.t-ret .tg{background:var(--ok)}
-.h.t-buy{border-left-color:var(--p)}.h.t-buy .tg{background:var(--p)}
-.h.wait{opacity:.65;border-left-style:dashed}
+h3{margin:8px 2px 6px;font-size:14px;color:var(--muted)}
+.h{font-size:13px;line-height:1.35;background:#fff;border-radius:10px;padding:8px 9px;margin-bottom:6px}
+.h .n{font-weight:700;font-size:14px;word-break:break-all}
+.tag-out{color:var(--out);font-weight:700}.tag-in{color:var(--ok);font-weight:700}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10;display:flex;align-items:flex-end;justify-content:center}
 .overlay.center{align-items:center;padding:20px;z-index:20}
 .panel{background:#fff;width:100%;max-width:640px;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto}
@@ -73,23 +67,53 @@ h3{margin:10px 2px 2px;font-size:16px;color:#33404d}
 .errbody b{font-size:20px}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222;color:#fff;padding:11px 18px;border-radius:22px;font-size:15px;z-index:30;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90%;text-align:center}
 #toast.show{opacity:1}
+
+.status-wait{background:#fff3ce!important;color:#855d13!important;border:1px solid #e8cd85}
+.status-ok{background:#e6f3e9!important;color:#21633e!important;border:1px solid #b9dbc4}
+.status-error{background:#fff0ed!important;color:#a7382d!important;border:1px solid #e8b4ac}
+.offline-note{font-size:11px;margin-top:7px;padding:5px 8px;border-radius:6px;line-height:1.5}
+.empty-hint{background:white;padding:20px 12px;border-radius:12px;color:#657586;font-size:13px;line-height:1.7;border:1px solid var(--line)}
+button{cursor:pointer}button:focus-visible,input:focus-visible{outline:3px solid #9cb9cf;outline-offset:2px}
+
+:root{--p:#23465b;--bg:#f2f4f6;--line:#d6dde3;--muted:#667583}
+header{padding:14px 12px 10px}.chip{border-radius:8px;min-height:40px}
+.brand{display:flex;align-items:center;gap:8px}.brand b{font-size:17px}
+#menuBtn{font-size:23px;padding:2px 10px}#whoBtn{font-size:12px;padding:6px 8px}
+.item{min-height:76px;padding:12px 10px;border-radius:9px}.stock{background:#edf0f3;color:#283b49;min-width:40px}.stock small{display:block;font-size:10px;font-weight:500}
+.stock.low{background:#fff0ed;color:#a7382d}.stock.warn{background:#fff0da;color:#a34d0b}
+.seg button.on.out,.btn.out{background:var(--p);border-color:var(--p)}
+#adminBar{flex-wrap:wrap;border-top:1px solid #ffffff35;padding-top:10px}#adminBar .chip{font-size:13px}
+#adminSwitch{margin-top:8px;background:transparent;border:1px solid #ffffff70}
+.drawer{margin:0;border:0;padding:22px 18px;width:min(340px,90vw);height:100dvh;max-height:100dvh;background:#f6f8fa;color:#243745;box-shadow:8px 0 36px #142d4930}
+.drawer::backdrop{background:#14253670}.menu-action{display:block;width:100%;padding:14px;margin:8px 0;border:1px solid var(--line);border-radius:9px;background:#fff;text-align:left;font-size:15px;color:#243745}
+.menu-action[aria-pressed=true]{border-color:var(--p);background:#e6eef3;font-weight:700}.menu-label{margin-top:24px;font-size:13px;color:var(--muted)}
+#filterRow{display:flex;align-items:center;justify-content:space-between;margin-top:8px;background:#e6eef3;border-radius:8px;padding:7px;font-size:12px}#clearFilter{border:0;background:transparent;color:var(--p);padding:5px}
+#sSub{line-height:1.7;margin-top:6px}.stock-detail{display:inline-block;padding:2px 8px;border-radius:5px}
+@media(max-width:380px){main{gap:7px;padding:8px 8px 0}.brand b{font-size:15px}.item{padding:9px 7px}.item b{font-size:15px}}
 </style>
 </head>
 <body>
 <header>
-  <div class="row"><b>베어링 출고관리</b><button id="whoBtn" class="chip"></button></div>
+  <div class="row"><div class="brand"><button id="menuBtn" class="chip" aria-label="메뉴 열기" aria-controls="menuDrawer">☰</button><b>베어링 출고관리</b></div><button id="whoBtn" class="chip"></button></div>
   <div class="row sub"><button id="stat" class="chip"></button><button id="syncBtn" class="chip">목록 새로고침</button></div>
-  <div id="adminBar"><button id="buyBtn" class="chip">📦 베어링 구매</button><button id="addBtn" class="chip">➕ 신규 베어링 추가</button></div>
-</header>
+  <div id="adminBar"><button id="buyBtn" class="chip">구매 입고</button><button id="addBtn" class="chip">신규 품목 등록</button><button id="adminExit" class="chip">관리자 종료</button></div>
+<button id="adminSwitch" class="chip">관리자 전환</button>
+<div id="offlineNotice" class="offline-note">오프라인 화면 준비 중…</div></header>
+<dialog id="menuDrawer" class="drawer" aria-labelledby="menuTitle">
+<div class="row"><b id="menuTitle">메뉴</b><button id="menuClose" class="menu-action" style="width:auto;margin:0">닫기</button></div>
+<button id="installBtn" class="menu-action">홈 화면에 추가</button><p id="installHelp" class="muted" aria-live="polite"></p>
+<div class="menu-label">품목 분류로 찾기</div><p class="muted">번호를 모를 때 종류를 선택한 뒤 규격·위치로 좁혀보세요.</p>
+<div id="categoryMenu"></div>
+</dialog>
 <main>
   <section class="pane">
-    <input id="q" type="search" placeholder="번호·규격 검색" autocomplete="off">
+    <input id="q" type="search" placeholder="번호·규격 검색 (예: 6205)" autocomplete="off">
+    <div id="filterRow" class="hidden"><span id="filterName"></span><button id="clearFilter">분류 해제 ×</button></div>
     <div id="listTitle" class="muted"></div>
     <div id="list" class="scroll"></div>
   </section>
   <section class="pane">
-    <h3>최근 사용 이력</h3>
-    <div id="histSub" class="muted" style="margin:0 2px 7px"></div>
+    <h3>내 최근 입력</h3>
     <div id="hist" class="scroll"></div>
   </section>
 </main>
@@ -150,7 +174,7 @@ h3{margin:10px 2px 2px;font-size:16px;color:#33404d}
     <div class="big">작업자 설정</div>
     <div class="muted" style="margin:6px 0 14px">한 번 입력하면 이 휴대폰에 저장되어 다음부터 묻지 않습니다.</div>
     <input id="nameIn" placeholder="작업자 이름 (필수)" autocomplete="name">
-    <input id="pinIn" placeholder="PIN (현장 PIN / 관리자는 관리자 PIN)" inputmode="numeric" autocomplete="off">
+    <input id="pinIn" type="password" class="f" required placeholder="PIN (현장 PIN / 관리자는 관리자 PIN)" inputmode="numeric" autocomplete="off">
     <div class="btns"><button id="setupCancel" class="btn gray">닫기</button><button id="setupOk" class="btn">저장</button></div>
   </div>
 </div>
@@ -179,9 +203,9 @@ const CATS = [
   {p:'UBH',n:'유니트베어링 하우징'}
 ];
 
-const LS = {items:'br_items',itemsAt:'br_items_at',queue:'br_queue',name:'br_name',pin:'br_pin',role:'br_role',hist:'br_hist2',histAt:'br_hist_at',equips:'br_equips'};
+const LS = {items:'br_items',itemsAt:'br_items_at',queue:'br_queue',name:'br_name',pin:'br_pin',role:'br_role',hist:'br_hist',equips:'br_equips'};
 const load=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}};
-const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const save=(k,v)=>{localStorage.setItem(k,JSON.stringify(v));};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm=s=>String(s||'').toLowerCase().replace(/[\s\-_.×*]/g,'');
@@ -193,11 +217,16 @@ const post=(obj,ms)=>fetchT(API_URL,{method:'POST',headers:{'Content-Type':'text
 
 let items=load(LS.items,[]), queue=load(LS.queue,[]), hist=load(LS.hist,[]);
 let name=load(LS.name,''), pin=load(LS.pin,''), role=load(LS.role,'field');
-let cur=null, type='출고', flushing=false, adding=false, buySel=null, lastSync=0, tt;
+let cur=null, type='출고', flushing=false, adding=false, buySel=null, tt;
+let authorized=!!pin && load('br_verified_pin','')===pin, fetching=false, offlineReady=false;
+let failed=load('br_failed',[]);
+let category='', installPrompt=null, setupTarget='';
+const stockClass=n=>n<=0?'low':n<=4?'warn':'';
+const stockLabel=n=>n<=0?'재고 없음':n<=4?'재고 부족':'';
 
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2800);}
 function pending(code){return queue.filter(r=>r.code===code).reduce((a,r)=>a+(r.type==='출고'?-r.qty:r.qty),0);}
-function stockOf(it){return (isFinite(it.k)?Number(it.k):0)+pending(it.c);}
+function stockOf(it){return (isFinite(it.k)?Number(it.k):0); /* 서버 확인 재고, 미전송 별도 */}
 function catOf(code){const m=/^([A-Za-z]+)-/.exec(code||'');const p=m?m[1].toUpperCase():'';return CATS.find(c=>c.p===p);}
 function nextCode(p){
   let max=0;
@@ -209,56 +238,59 @@ function searchItems(q){
   return items.filter(i=>{const h=norm(i.c+i.n+i.s+i.l);return ts.every(t=>h.includes(t));});
 }
 const itemBtn=(i,withCat)=>{const s=stockOf(i),c=catOf(i.c);
-  return `<button class="item" data-c="${esc(i.c)}"><span><b>${esc(i.n)}</b><br><span class="muted">${c?esc(c.n)+' · ':''}${esc(i.c)}${i.s?' · '+esc(i.s):''}${i.l?' · '+esc(i.l):''}</span></span><span class="stock ${s<=0?'low':''}">${s}</span></button>`;};
+  return `<button class="item" data-c="${esc(i.c)}"><span><b>${esc(i.n)}</b><br><span class="muted">${c?esc(c.n)+' · ':''}${esc(i.c)}${i.s?' · '+esc(i.s):''}${i.l?' · '+esc(i.l):''}</span></span><span class="stock ${stockClass(s)}">${s}<small>${stockLabel(s)}</small></span></button>`;};
 
 function renderList(){
+  if(!authorized){$('listTitle').textContent='PIN 확인 후 이용해주세요.';$('list').innerHTML='';return;}
   const q=$('q').value.trim();
   let rows;
   if(!items.length){
     $('listTitle').textContent=CONFIGURED?'품목 목록이 없습니다. 인터넷 연결 후 "목록 새로고침"을 눌러주세요.':'API_URL 설정이 필요합니다 (설치 안내 참고).';
     $('list').innerHTML='';return;
   }
-  if(!q){
-    rows=items;
-    $('listTitle').textContent=`전체 ${items.length}종 · 위아래로 밀어서 찾기`;
+  if(!q&&!category){
+    const recent=[...new Set(hist.filter(h=>h.st==='완료').map(h=>h.c).filter(Boolean))].slice(0,8);
+    rows=recent.map(c=>items.find(i=>i.c===c)).filter(Boolean);
+    $('listTitle').textContent=rows.length?'이 기기의 최근 사용 · '+rows.length+'종':'등록 '+items.length+'종 · 품번이나 위치로 검색하세요';
+    if(!rows.length){$('list').innerHTML='<div class="empty-hint"><b>어떤 베어링이 필요하세요?</b><p>위 검색창에 품번 또는 위치를 입력하세요.</p><p>예: 6205 · A-1</p><small>사용 후에는 최근 품목이 여기에 표시됩니다.</small></div>';return;}
   }else{
-    rows=searchItems(q);
+    rows=searchItems(q).filter(i=>!category||(category==='other'?!catOf(i.c):catOf(i.c)?.p===category));
     $('listTitle').textContent=rows.length?`검색 결과 ${rows.length}건`:'일치하는 품목이 없습니다';
   }
   const st=$('list').scrollTop;
-  $('list').innerHTML=rows.map(i=>itemBtn(i)).join('');
+  $('list').innerHTML=rows.slice(0,50).map(i=>itemBtn(i)).join('');
+  if(rows.length>50)$('listTitle').textContent+=' · 앞 50건 표시, 검색어를 더 입력하세요';
   $('list').scrollTop=st;
 }
 function renderStatus(){
   $('whoBtn').textContent='👤 '+(name||'이름 설정')+(role==='admin'?' (관리자)':'');
-  $('adminBar').style.display=role==='admin'?'flex':'none';
-  $('stat').textContent=queue.length?`⏳ 전송 대기 ${queue.length}건 (눌러서 재전송)`:'✅ 모두 전송됨';
-  const at=load(LS.itemsAt,0);
-  if(at){const d=new Date(at);$('syncBtn').textContent=`목록 ${p2(d.getMonth()+1)}/${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())} ↻`;}
+  $('adminBar').style.display=authorized&&role==='admin'?'flex':'none';
+  $('adminSwitch').classList.toggle('hidden',!authorized||role==='admin');
+  $('stat').className='chip '+(failed.length?'status-error':queue.length?'status-wait':'status-ok');
+  $('stat').textContent=failed.length?'확인 필요 '+failed.length+'건 · 대기 '+queue.length+'건':queue.length?'전송 대기 '+queue.length+'건':'서버 저장 완료 · 대기 0건';
+  if(!authorized){$('stat').textContent='PIN 확인 필요';$('stat').className='chip status-error';}
+  else if(!hist.some(h=>h.st==='완료')&&!queue.length&&!failed.length)$('stat').textContent='전송할 기록 없음';
+  const at=load(LS.itemsAt,0);if(at){const d=new Date(at);$('syncBtn').textContent='재고 확인 '+p2(d.getHours())+':'+p2(d.getMinutes())+' ↻';}
 }
-// 최근 사용 이력 = 서버의 전체 작업자 이력(hist) 앞에, 아직 전송 전인 내 입력(queue)을 붙여서 최대 50건
-const fmtTs=ts=>{const m=/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(ts||'');return m?`${m[2]}/${m[3]} ${m[4]}:${m[5]}`:esc(ts||'');};
-function histRows(){
-  const ids=new Set(hist.map(h=>h.id));
-  const mine=queue.filter(r=>!ids.has(r.id)).reverse().map(r=>({id:r.id,ts:r.ts,n:r.name,type:r.type,qty:r.qty,w:r.worker,wait:true}));
-  return mine.concat(hist).slice(0,50);
-}
+
 function renderHist(){
-  const rows=histRows();
-  const at=load(LS.histAt,0);
-  $('histSub').textContent=at?`모든 작업자 · ${p2(new Date(at).getHours())}:${p2(new Date(at).getMinutes())} 기준 ${rows.length}건`:'모든 작업자 · 목록 새로고침으로 불러오기';
-  const cls={출고:'t-out',반납:'t-ret',입고:'t-buy'};
-  $('hist').innerHTML=rows.length?rows.map(h=>`<div class="h ${cls[h.type]||''}${h.wait?' wait':''}"><div class="n">${esc(h.n)}</div><span class="tg">${esc(h.type)} ${h.qty}개</span>${h.wait?' <span class="muted">전송 대기</span>':''}<div class="w">${esc(h.w)}</div><div class="t">${fmtTs(h.ts)}</div></div>`).join(''):'<div class="muted">아직 사용 이력이 없습니다.</div>';
+ const failures=failed.map(h=>'<div class="h status-error"><div class="n">'+esc(h.name||h.code)+'</div><b>확인 필요</b><div>'+esc(h.message)+'</div></div>').join('');
+ $('hist').innerHTML=failures+hist.map(h=>'<div class="h '+(h.st==='완료'?'status-ok':h.st==='거부됨'?'status-error':'status-wait')+'"><div class="muted">'+esc(h.ts.slice(5,16))+'</div><div class="n">'+esc(h.n)+'</div><div>'+esc(h.type)+' '+h.qty+'개</div><b>'+(h.st==='완료'?'서버 저장 완료':h.st==='거부됨'?'확인 필요':'전송 대기')+'</b></div>').join('')||'<div class="muted">첫 사용입니다.<br>기록하면 여기에 표시됩니다.</div>';
 }
+
 function renderAll(){renderList();renderStatus();renderHist();}
 
 // 전송 대기열에 넣고 화면 갱신 (출고/반납/입고 공통)
 function enqueue(rec){
-  queue.push(rec);save(LS.queue,queue);
-  renderAll();
-  toast(`${rec.type} ${rec.qty}개 기록됨`);
-  flush();
+ if(!authorized||!pin){showError('접근 실패','PIN을 입력하고 확인해주세요.');openSetup();return false;}
+ const next=[...queue,rec];
+ try{save(LS.queue,next);}catch(e){showError('기기 저장 실패','기록을 보관하지 못했습니다. 입력 내용을 유지합니다. 관리자에게 문의해주세요.');return false;}
+ queue=next;hist.unshift({id:rec.id,c:rec.code,ts:rec.ts,n:rec.name,type:rec.type,qty:rec.qty,st:'대기'});hist=hist.slice(0,50);
+ try{save(LS.hist,hist);}catch(e){} // queue is the durable source; history is only a view
+ renderAll();toast('기기에 보관 · 전송 대기');flush();return true;
 }
+function showError(title,message){$('errTitle').textContent=title;$('errBody').textContent=message;$('err').classList.remove('hidden');}
+
 
 // ---------- 출고/반납 ----------
 function setType(t){
@@ -273,6 +305,7 @@ function openSheet(it){
   $('sName').textContent=it.n;
   const c=catOf(it.c);
   $('sSub').textContent=`${c?c.n+' · ':''}${it.s||''}${it.l?' · 위치 '+it.l:''} · 현재 재고 ${stockOf(it)}`;
+  $('sSub').innerHTML=esc($('sSub').textContent)+' <span class="stock stock-detail '+stockClass(stockOf(it))+'">'+stockLabel(stockOf(it))+'</span>';
   $('qty').value=1;$('equip').value='';$('memo').value='';
   $('equipList').innerHTML=load(LS.equips,[]).map(e=>`<option value="${esc(e)}">`).join('');
   $('sheet').classList.remove('hidden');
@@ -280,14 +313,13 @@ function openSheet(it){
 function closeSheet(){$('sheet').classList.add('hidden');cur=null;}
 function submit(){
   if(!cur)return;
-  const qty=parseInt($('qty').value,10);
-  if(!(qty>0)){toast('수량을 확인하세요');return;}
+  const qty=Number($('qty').value);
+  if(!Number.isSafeInteger(qty)||qty<1||qty>100000){showError('수량 확인','수량은 1~100000의 정수로 입력해주세요.');return;}
   if(!name){openSetup();return;}
-  if(type==='출고'&&qty>stockOf(cur)&&!confirm(`현재 재고(${stockOf(cur)})보다 많이 출고합니다. 계속할까요?`))return;
+  // 최종 재고 부족 여부는 서버에서 검사합니다. 오래된 기기 재고로 확정하지 않습니다.
   const rec={id:uuid(),ts:nowStr(),code:cur.c,name:cur.n,type,qty,worker:name,equip:$('equip').value.trim(),memo:$('memo').value.trim()};
   if(rec.equip){const eq=load(LS.equips,[]).filter(e=>e!==rec.equip);eq.unshift(rec.equip);save(LS.equips,eq.slice(0,15));}
-  closeSheet();$('q').value='';
-  enqueue(rec);
+  if(enqueue(rec)){closeSheet();$('q').value='';renderAll();}
 }
 
 // ---------- 베어링 구매(입고) : 관리자 ----------
@@ -314,12 +346,11 @@ function renderBuy(){
 }
 function submitBuy(){
   if(!buySel)return;
-  const qty=parseInt($('buyQty').value,10);
-  if(!(qty>0)){toast('수량을 확인하세요');return;}
+  const qty=Number($('buyQty').value);
+  if(!Number.isSafeInteger(qty)||qty<1||qty>100000){showError('수량 확인','수량은 1~100000의 정수로 입력해주세요.');return;}
   if(!name){openSetup();return;}
   const rec={id:uuid(),ts:nowStr(),code:buySel.c,name:buySel.n,type:'입고',qty,worker:name,equip:'',memo:$('buyMemo').value.trim()||'구매 입고'};
-  closeBuy();
-  enqueue(rec);
+  if(enqueue(rec))closeBuy();
 }
 
 // ---------- 신규 베어링 추가 : 관리자 ----------
@@ -368,63 +399,77 @@ async function submitAdd(){
 
 // ---------- 서버 통신 ----------
 async function fetchItems(manual){
-  if(!CONFIGURED){renderAll();return;}
-  try{
-    const d=await post({pin,action:'items'});
-    if(d.ok){
-      items=d.items;save(LS.items,items);save(LS.itemsAt,Date.now());
-      hist=d.hist||[];save(LS.hist,hist);save(LS.histAt,Date.now());lastSync=Date.now();
-      role=d.role||'field';save(LS.role,role);
-      if(manual)toast('목록을 갱신했습니다');
-    }
-    else if(d.error==='PIN'){toast('PIN이 맞지 않습니다');openSetup();}
-  }catch(e){if(manual)toast('인터넷 연결을 확인하세요 (저장된 목록 사용 중)');}
-  renderAll();
+ if(!CONFIGURED||!authorized||flushing||fetching)return;
+ fetching=true;
+ try{const d=await post({pin,action:'items'});if(d.ok){items=d.items;save(LS.items,items);save(LS.itemsAt,Date.now());role=d.role||'field';save(LS.role,role);if(manual)toast('서버 재고를 확인했습니다');}else if(d.error==='PIN'){authorized=false;showError('접근 실패','PIN이 없거나 맞지 않습니다. PIN을 다시 입력해주세요.');openSetup();}}
+ catch(e){if(manual)toast('연결 또는 기기 저장 실패 · 마지막 확인 재고 표시');}
+ finally{fetching=false;renderAll();}
 }
 async function flush(manual){
-  if(!CONFIGURED)return;
-  if(!queue.length){if(manual)toast('보낼 내용이 없습니다');return;}
-  if(flushing)return;
-  flushing=true;let sent=false;
-  try{
-    while(queue.length){
-      const batch=queue.slice(0,30);
-      const d=await post({pin,records:batch});
-      if(!d.ok){if(d.error==='PIN'){toast('PIN이 맞지 않습니다');openSetup();}break;}
-      const saved=d.saved||[],rej=d.rejected||[],done=new Set([...saved,...rej]);
-      queue=queue.filter(x=>!done.has(x.id));save(LS.queue,queue);
-      if(rej.length)toast(`${rej.length}건이 거부되었습니다 (권한·품목을 확인하세요)`);
-      sent=true;renderStatus();renderHist();
-      if(!done.size)break;
-    }
-  }catch(e){if(manual)toast('연결 실패 - 연결되면 자동으로 다시 전송됩니다');}
-  finally{flushing=false;renderAll();}
-  if(sent&&!queue.length)fetchItems(false);
+ if(!CONFIGURED||!authorized||flushing||fetching)return;
+ flushing=true;let sent=false;
+ try{while(queue.length){
+   const batch=queue.slice(0,30),d=await post({pin,records:batch});
+   if(!d.ok){if(d.error==='PIN'){authorized=false;showError('접근 실패','PIN을 입력하고 확인해주세요.');openSetup();}else if(manual)showError('전송 대기',d.msg||'저장을 확인하지 못했습니다. 기록을 보관하고 재전송합니다.');break;}
+   const saved=d.saved||[],rejected=(d.rejected||[]).map(r=>typeof r==='string'?{id:r,message:'확인 필요 · 관리자에게 문의해주세요.'}:r);
+   const done=new Set([...saved,...rejected.map(r=>r.id)]);if(!done.size)break;
+   const nextFailed=[...failed];for(const r of rejected){const original=batch.find(x=>x.id===r.id);if(original&&!nextFailed.some(x=>x.id===r.id))nextFailed.push({...original,...r});}
+   // Persist failure details BEFORE removing anything from the durable outbox.
+   save('br_failed',nextFailed);const next=queue.filter(x=>!done.has(x.id));save(LS.queue,next);failed=nextFailed;queue=next;
+   hist.forEach(h=>{if(saved.includes(h.id))h.st='완료';else if(rejected.some(r=>r.id===h.id))h.st='거부됨';});save(LS.hist,hist);
+   sent=true;renderAll();if(rejected.length)showError('확인 필요',rejected.map(r=>r.message||'관리자에게 문의해주세요.').join('\n'));
+ }}catch(e){if(manual)showError('전송 대기','서버 응답 또는 기기 저장을 확인하지 못했습니다. 같은 기록 번호로 다시 전송합니다.');}
+ finally{flushing=false;renderAll();}
+ if(authorized)await fetchItems(false);
+}
+function openSetup(target=''){
+ if(queue.length||flushing||fetching){toast('전송 대기 기록과 진행 중 처리를 완료한 뒤 전환해주세요.');return;}
+ setupTarget=target;
+ $('nameIn').value=name;$('pinIn').value='';$('setupCancel').style.display=authorized?'':'none';$('setup').classList.remove('hidden');
+}
+async function saveSetup(){
+ const n=$('nameIn').value.trim(),np=$('pinIn').value.trim();
+ if(!n){toast('이름을 입력하세요');return;}
+ if(!np){showError('접근 실패','PIN은 필수입니다. PIN을 입력해주세요.');return;}
+ if(flushing||fetching){toast('처리 중입니다. 잠시 후 다시 시도해주세요.');return;}
+ $('setupOk').disabled=true;
+ try{const d=await post({pin:np,action:'items'});if(!d.ok){showError('접근 실패','PIN이 맞지 않습니다. 관리자에게 문의해주세요.');return;}
+ if(setupTarget==='admin'&&d.role!=='admin'){showError('접근 실패','관리자 PIN을 입력해주세요.');return;}
+ if(setupTarget==='field'&&d.role==='admin'){showError('접근 실패','현장 PIN을 입력해주세요.');return;}
+ save(LS.name,n);save(LS.pin,np);save('br_verified_pin',np);name=n;pin=np;authorized=true;role=d.role||'field';items=d.items;save(LS.role,role);save(LS.items,items);save(LS.itemsAt,Date.now());$('setup').classList.add('hidden');renderAll();await flush();
+ }catch(e){showError('접근 확인 실패','최초 PIN 확인에는 인터넷과 기기 저장이 필요합니다. 연결 상태를 확인해주세요.');}
+ finally{$('setupOk').disabled=false;}
 }
 
-// ---------- 작업자/PIN 설정 ----------
-function openSetup(){
-  $('nameIn').value=name;$('pinIn').value=pin;
-  $('setupCancel').style.display=name?'':'none';
-  $('setup').classList.remove('hidden');
+function selectCategory(p){
+ category=p;$('q').value='';$('filterRow').classList.toggle('hidden',!p);$('filterName').textContent=p==='other'?'미분류':CATS.find(c=>c.p===p)?.n||'';
+ renderList();$('list').scrollTop=0;$('menuDrawer').close();$('menuBtn').focus();
 }
-function saveSetup(){
-  const n=$('nameIn').value.trim();
-  if(!n){toast('이름을 입력하세요');return;}
-  const np=$('pinIn').value.trim();
-  if(np!==pin){role='field';save(LS.role,role);} // PIN이 바뀌면 서버가 다시 확인해 줄 때까지 현장 권한으로
-  name=n;pin=np;
-  save(LS.name,name);save(LS.pin,pin);
-  $('setup').classList.add('hidden');renderAll();fetchItems(false);flush();
+function openMenu(){
+ $('categoryMenu').innerHTML=[{p:'',n:'최근 사용 · 검색'},...CATS,{p:'other',n:'미분류'}].map(c=>'<button class="menu-action" data-cat="'+c.p+'" aria-pressed="'+(category===c.p)+'">'+esc(c.n)+'</button>').join('');
+ $('menuDrawer').showModal();
 }
-
+async function installApp(){
+ if(window.matchMedia('(display-mode: standalone)').matches||navigator.standalone){$('installHelp').textContent='현재 홈 화면 앱으로 실행 중입니다.';return;}
+ if(installPrompt){const p=installPrompt;installPrompt=null;try{await p.prompt();const r=await p.userChoice;$('installHelp').textContent=r.outcome==='accepted'?'추가 요청을 보냈습니다. 홈 화면을 확인해주세요.':'추가를 취소했습니다. 브라우저 메뉴에서도 추가할 수 있습니다.';}catch(e){$('installHelp').textContent='브라우저 메뉴의 홈 화면에 추가 또는 앱 설치를 이용해주세요.';}return;}
+ const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+ $('installHelp').textContent=ios?'Safari에서 이 페이지 열기 → 공유 → 홈 화면에 추가 → 추가를 눌러주세요.':'브라우저 메뉴(⋮ 또는 …) → 홈 화면에 추가 또는 앱 설치를 선택하세요. 메뉴가 없으면 Chrome 또는 Edge에서 이 주소를 열어주세요.';
+}
 // ---------- 이벤트 ----------
+$('menuBtn').onclick=openMenu;$('menuClose').onclick=()=>$('menuDrawer').close();
+$('categoryMenu').onclick=e=>{const b=e.target.closest('[data-cat]');if(b)selectCategory(b.dataset.cat);};
+$('clearFilter').onclick=()=>selectCategory('');$('installBtn').onclick=installApp;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;});
+window.addEventListener('appinstalled',()=>{installPrompt=null;$('installHelp').textContent='홈 화면에 추가되었습니다.';});
+$('adminSwitch').onclick=()=>openSetup('admin');
+$('adminExit').onclick=()=>{if(queue.length||flushing||fetching){toast('전송과 진행 중 처리를 완료한 뒤 종료해주세요.');return;}try{save(LS.pin,'');save('br_verified_pin','');save(LS.role,'field');pin='';role='field';authorized=false;renderAll();openSetup('field');}catch(e){showError('설정 저장 실패','관리자 종료 상태를 저장하지 못했습니다. 다시 시도해주세요.');}};
+
 $('q').addEventListener('input',()=>{renderList();$('list').scrollTop=0;});
 $('list').addEventListener('click',e=>{const b=e.target.closest('.item');if(!b)return;const it=items.find(i=>i.c===b.dataset.c);if(it)openSheet(it);});
 $('tOut').onclick=()=>setType('출고');
 $('tIn').onclick=()=>setType('반납');
-$('minus').onclick=()=>{$('qty').value=Math.max(1,(parseInt($('qty').value,10)||1)-1);};
-$('plus').onclick=()=>{$('qty').value=(parseInt($('qty').value,10)||0)+1;};
+$('minus').onclick=()=>{$('qty').value=Math.max(1,(Number($('qty').value)||1)-1);};
+$('plus').onclick=()=>{$('qty').value=(Number($('qty').value)||0)+1;};
 $('qty').addEventListener('focus',e=>e.target.select());
 $('cancel').onclick=closeSheet;
 $('ok').onclick=submit;
@@ -433,8 +478,8 @@ $('buyBtn').onclick=openBuy;
 $('buyQ').addEventListener('input',()=>{buySel=null;renderBuy();});
 $('buyList').addEventListener('click',e=>{const b=e.target.closest('.item');if(!b)return;const it=items.find(i=>i.c===b.dataset.c);if(it){buySel=it;renderBuy();}});
 $('buySelBox').onclick=()=>{buySel=null;renderBuy();$('buyQ').focus();};
-$('buyMinus').onclick=()=>{$('buyQty').value=Math.max(1,(parseInt($('buyQty').value,10)||1)-1);};
-$('buyPlus').onclick=()=>{$('buyQty').value=(parseInt($('buyQty').value,10)||0)+1;};
+$('buyMinus').onclick=()=>{$('buyQty').value=Math.max(1,(Number($('buyQty').value)||1)-1);};
+$('buyPlus').onclick=()=>{$('buyQty').value=(Number($('buyQty').value)||0)+1;};
 $('buyQty').addEventListener('focus',e=>e.target.select());
 $('buyCancel').onclick=closeBuy;
 $('buyOk').onclick=submitBuy;
@@ -445,20 +490,19 @@ $('addCancel').onclick=()=>$('add').classList.add('hidden');
 $('addOk').onclick=submitAdd;
 $('errOk').onclick=()=>$('err').classList.add('hidden');
 
-$('whoBtn').onclick=openSetup;
+$('whoBtn').onclick=()=>openSetup();
 $('setupOk').onclick=saveSetup;
 $('setupCancel').onclick=()=>$('setup').classList.add('hidden');
-$('stat').onclick=()=>flush(true);
+$('stat').onclick=()=>{if(failed.length)showError('확인 필요',failed.map(r=>(r.name||r.code)+' · '+r.message).join('\n'));flush(true);};
 $('syncBtn').onclick=()=>fetchItems(true);
-window.addEventListener('online',()=>{flush();fetchItems(false);});
+window.addEventListener('online',()=>flush());
 setInterval(()=>{if(queue.length)flush();},30000);
-// 다른 사람의 사용 내역이 보이도록: 앱을 다시 열 때(30초 이상 지났으면)와 화면을 보고 있는 동안 3분마다 자동 갱신
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-lastSync>30000)fetchItems(false);});
-setInterval(()=>{if(!document.hidden&&Date.now()-lastSync>170000)fetchItems(false);},60000);
 
+queue.forEach(r=>{if(!hist.some(h=>h.id===r.id))hist.unshift({id:r.id,c:r.code,ts:r.ts||'',n:r.name||r.code,type:r.type,qty:r.qty,st:'대기'});});
 renderAll();
-if(!name)openSetup();else{fetchItems(false);flush();}
-if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+if(!name||!authorized)openSetup();else flush();
+if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').then(()=>navigator.serviceWorker.ready).then(()=>{$('offlineNotice').textContent='오프라인 화면 준비됨 · 최초 PIN 확인은 인터넷 필요';}).catch(()=>{$('offlineNotice').textContent='오프라인 준비 실패 · 인터넷 연결 상태에서 사용하고 관리자에게 문의해주세요.';$('offlineNotice').className='status-error offline-note';});setTimeout(()=>{if(!$('offlineNotice').textContent.includes('준비됨')&&!$('offlineNotice').textContent.includes('실패'))$('offlineNotice').textContent='오프라인 준비 확인 중 · 연결 상태를 확인해주세요.';},12000);}else{$('offlineNotice').textContent='오프라인 기능 미지원 · 인터넷 연결 필요';}
 </script>
 </body>
 </html>
+
