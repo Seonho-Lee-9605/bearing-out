@@ -170,9 +170,9 @@ header{padding:14px 12px 10px}.chip{border-radius:8px;min-height:40px}
 <div id="setup" class="overlay hidden">
   <div class="panel">
     <div class="big">이름 · PIN 로그인</div>
-    <div class="muted" style="margin:6px 0 14px">현장 PIN은 현장직 모드로, 관리자 PIN은 관리자 모드로 바로 접속합니다. 한 번 입력하면 이 휴대폰에 저장됩니다.</div>
+    <div class="muted" style="margin:6px 0 14px">처음 한 번 이름과 PIN을 입력해주세요. 현장 PIN은 현장직 모드로, 관리자 PIN은 관리자 모드로 접속하며, 다음 방문에도 이 휴대폰에서 유지됩니다.</div>
     <input id="nameIn" placeholder="작업자 이름 (필수)" autocomplete="name">
-    <input id="pinIn" type="password" class="f" required placeholder="PIN (부여받은 PIN 입력하세요.)" inputmode="numeric" autocomplete="off">
+    <input id="pinIn" type="password" class="f" required placeholder="PIN (부여받은 PIN 입력해주세요.)" inputmode="numeric" autocomplete="off">
     <div class="btns"><button id="setupCancel" class="btn gray">닫기</button><button id="setupOk" class="btn">저장</button></div>
   </div>
 </div>
@@ -502,4 +502,5 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').the
 </script>
 </body>
 </html>
+
 
