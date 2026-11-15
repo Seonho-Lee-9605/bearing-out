@@ -90,6 +90,7 @@ header{padding:14px 12px 10px}.chip{border-radius:8px;min-height:40px}
 #sSub{line-height:1.7;margin-top:6px}.stock-detail{display:inline-block;padding:2px 8px;border-radius:5px}
 @media(max-width:380px){main{gap:7px;padding:8px 8px 0}.brand b{font-size:15px}.item{padding:9px 7px}.item b{font-size:15px}}
 .history-note{font-size:11px;line-height:1.5;margin:0 2px 8px}.history-count{font-size:11px;font-weight:500}#hist .h{padding:10px 9px;border:1px solid var(--line);line-height:1.5}#hist .n{font-size:15px;overflow-wrap:anywhere;word-break:normal}#hist .history-action{font-size:13px;font-weight:650;margin:4px 0}#hist .history-person{font-size:13px;overflow-wrap:anywhere}#hist time{display:block;font-size:11px;color:var(--muted)}
+.failure-card{padding:12px 0;border-bottom:1px solid #e8b4ac}.failure-card:last-child{border-bottom:0}.failure-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.failure-head strong{overflow-wrap:anywhere}.failure-dismiss{flex:0 0 44px;min-height:44px;border:1px solid #d9a9a3;border-radius:8px;background:#fff;color:#8b3028;font-size:24px}.failure-meta{font-size:13px;margin:4px 0}.failure-note{font-size:12px;line-height:1.5;margin:0 0 8px;color:#69433e}
 </style>
 </head>
 <body>
@@ -173,7 +174,7 @@ header{padding:14px 12px 10px}.chip{border-radius:8px;min-height:40px}
     <div class="big">작업자 설정</div>
     <div class="muted" style="margin:6px 0 14px">한 번 입력하면 이 휴대폰에 저장되어 다음부터 묻지 않습니다.</div>
     <input id="nameIn" placeholder="작업자 이름 (필수)" autocomplete="name">
-    <input id="pinIn" type="password" class="f" required placeholder="PIN (부여받은 PIN을 입력해주세요! )" inputmode="numeric" autocomplete="off">
+    <input id="pinIn" type="password" class="f" required placeholder="PIN (부여받은 PIN 입력해주세요!)" inputmode="numeric" autocomplete="off">
     <div class="btns"><button id="setupCancel" class="btn gray">닫기</button><button id="setupOk" class="btn">저장</button></div>
   </div>
 </div>
@@ -255,11 +256,12 @@ function renderList(){
     if(!rows.length){$('list').innerHTML='<div class="empty-hint"><b>어떤 베어링이 필요하세요?</b><p>위 검색창에 품번 또는 위치를 입력하세요.</p><p>예: 6205 · A-1</p><small>사용 후에는 최근 품목이 여기에 표시됩니다.</small></div>';return;}
   }else{
     rows=searchItems(q).filter(i=>!category||(category==='other'?!catOf(i.c):catOf(i.c)?.p===category));
-    $('listTitle').textContent=rows.length?`검색 결과 ${rows.length}건`:'일치하는 품목이 없습니다';
+    if(category)rows.sort((a,b)=>String(a.c).localeCompare(String(b.c),'en',{numeric:true,sensitivity:'base'}));
+    $('listTitle').textContent=rows.length?(category&&!q?`전체 ${rows.length}종 · 코드 순`:`검색 결과 ${rows.length}건`):'일치하는 품목이 없습니다';
   }
   const st=$('list').scrollTop;
-  $('list').innerHTML=rows.slice(0,50).map(i=>itemBtn(i)).join('');
-  if(rows.length>50)$('listTitle').textContent+=' · 앞 50건 표시, 검색어를 더 입력하세요';
+  $('list').innerHTML=(category?rows:rows.slice(0,50)).map(i=>itemBtn(i)).join('');
+  if(!category&&rows.length>50)$('listTitle').textContent+=' · 앞 50건 표시, 검색어를 더 입력하세요';
   $('list').scrollTop=st;
 }
 function renderStatus(){
@@ -296,6 +298,24 @@ function enqueue(rec){
  renderAll();toast('기기에 보관 · 전송 대기');flush();return true;
 }
 function showError(title,message){$('errTitle').textContent=title;$('errBody').textContent=message;$('err').classList.remove('hidden');}
+function showFailures(){
+ if(!failed.length){$('err').classList.add('hidden');return;}
+ $('errTitle').textContent='확인 필요 '+failed.length+'건';
+ $('errBody').innerHTML='<p class="failure-note">내용을 확인했으면 ×를 눌러 알림을 지우세요. 재고는 변경되지 않습니다. 실제로 가져간 물량이 있다면 관리자에게 알려주세요.</p>'+failed.map(r=>'<div class="failure-card"><div class="failure-head"><strong>'+esc(r.name||r.code)+'</strong><button type="button" class="failure-dismiss" data-dismiss-failure="'+esc(r.id)+'" aria-label="'+esc(r.name||r.code)+' 알림 확인 후 지우기" title="확인 후 알림 지우기">×</button></div><div class="failure-meta">'+esc(r.type)+' '+esc(r.qty)+'개'+(r.equip?' · '+esc(r.equip):'')+'</div><div>'+esc(r.message||'관리자에게 문의해주세요.')+'</div></div>').join('');
+ $('err').classList.remove('hidden');
+}
+function dismissFailure(id){
+ const record=failed.find(r=>r.id===id);if(!record)return;
+ const next=failed.filter(r=>r.id!==id);
+ try{
+  const archive=load('br_failed_ack',[]);
+  // Retain the rejected details locally before removing the active notification.
+  if(!archive.some(r=>r.id===id))save('br_failed_ack',[...archive,{...record,acknowledgedAt:new Date().toISOString()}]);
+  save('br_failed',next);
+ }catch(e){toast('알림 정리를 저장하지 못했습니다. 다시 시도해주세요.');return;}
+ failed=next;renderStatus();showFailures();
+ if(!failed.length)toast('확인한 알림을 지웠습니다.');
+}
 
 
 // ---------- 출고/반납 ----------
@@ -423,7 +443,7 @@ async function flush(manual){
    // Persist failure details BEFORE removing anything from the durable outbox.
    save('br_failed',nextFailed);const next=queue.filter(x=>!done.has(x.id));save(LS.queue,next);failed=nextFailed;queue=next;
    hist.forEach(h=>{if(saved.includes(h.id))h.st='완료';else if(rejected.some(r=>r.id===h.id))h.st='거부됨';});save(LS.hist,hist);
-   sent=true;renderAll();if(rejected.length)showError('확인 필요',rejected.map(r=>r.message||'관리자에게 문의해주세요.').join('\n'));
+   sent=true;renderAll();if(rejected.length)showFailures();
  }}catch(e){if(manual)showError('전송 대기','서버 응답 또는 기기 저장을 확인하지 못했습니다. 같은 기록 번호로 다시 전송합니다.');}
  finally{flushing=false;renderAll();}
  if(authorized)await fetchItems(false);
@@ -490,11 +510,12 @@ $('addCat').onchange=onCat;
 $('addCancel').onclick=()=>$('add').classList.add('hidden');
 $('addOk').onclick=submitAdd;
 $('errOk').onclick=()=>$('err').classList.add('hidden');
+$('errBody').addEventListener('click',e=>{const button=e.target.closest('[data-dismiss-failure]');if(button)dismissFailure(button.dataset.dismissFailure);});
 
 $('whoBtn').onclick=()=>openSetup();
 $('setupOk').onclick=saveSetup;
 $('setupCancel').onclick=()=>$('setup').classList.add('hidden');
-$('stat').onclick=()=>{if(failed.length)showError('확인 필요',failed.map(r=>(r.name||r.code)+' · '+r.message).join('\n'));else if(queue.length)showError('이 기기의 전송 대기',queue.map(r=>(r.name||r.code)+' · '+r.type+' '+r.qty+'개').join('\n'));flush(true);};
+$('stat').onclick=()=>{if(failed.length){showFailures();return;}if(queue.length)showError('이 기기의 전송 대기',queue.map(r=>(r.name||r.code)+' · '+r.type+' '+r.qty+'개').join('\n'));flush(true);};
 $('syncBtn').onclick=()=>fetchItems(true);
 window.addEventListener('online',()=>flush());
 setInterval(()=>{if(queue.length)flush();else if(document.visibilityState==='visible'&&Date.now()-historyAt>=60000)fetchItems(false);},30000);
