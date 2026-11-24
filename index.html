@@ -214,7 +214,24 @@ const uuid=()=>(window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now()
 const p2=n=>String(n).padStart(2,'0');
 const nowStr=()=>{const d=new Date();return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}`};
 function fetchT(u,o={},ms=20000){const c=new AbortController();const t=setTimeout(()=>c.abort(),ms);return fetch(u,{...o,signal:c.signal}).finally(()=>clearTimeout(t));}
-const post=(obj,ms)=>fetchT(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(obj)},ms).then(r=>r.json());
+const post=(obj,ms)=>fetchT(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(obj)},ms).then(async r=>{
+  const t=await r.text();
+  try{return JSON.parse(t);}
+  catch(_){const er=new Error('NONJSON');er.kind='NONJSON';er.status=r.status;er.snippet=t.replace(/<(script|style)[\s\S]*?<\/\1>/gi,' ').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,140);throw er;}
+});
+// 실패 원인을 사람이 알아볼 수 있게 풀어 쓰기 (PIN 값은 절대 포함하지 않음)
+function errShort(e){
+  if(e&&e.kind==='NONJSON')return '서버가 오류 화면을 보냄';
+  if(e&&e.name==='AbortError')return '서버 응답 시간 초과';
+  if(e&&e.name==='TypeError')return '서버에 연결하지 못함';
+  return '기기 처리 오류';
+}
+function errDetail(e){
+  if(e&&e.kind==='NONJSON')return '서버가 데이터가 아닌 화면을 돌려줬습니다 (HTTP '+e.status+(e.snippet?' · "'+e.snippet+'"':'')+'). 인터넷 문제가 아니라 Apps Script 배포·권한·코드 오류일 가능성이 큽니다. 위 문구를 관리자에게 알려주세요.';
+  if(e&&e.name==='AbortError')return '서버가 40초 안에 응답하지 않았습니다. 신호가 약하거나 서버가 느립니다. 잠시 후 다시 시도해주세요.';
+  if(e&&e.name==='TypeError')return '서버에 연결하지 못했습니다 ('+(e.message||'Failed to fetch')+'). 인터넷 연결과, 앱에 적힌 서버 주소가 현재 배포 주소와 같은지 확인해주세요.';
+  return '처리 중 오류가 났습니다 ('+((e&&e.name)||'Error')+': '+String((e&&e.message)||'').slice(0,100)+').';
+}
 
 let items=load(LS.items,[]), queue=load(LS.queue,[]), hist=load(LS.hist,[]);
 let name=load(LS.name,''), pin=load(LS.pin,''), role=load(LS.role,'field');
@@ -430,7 +447,7 @@ async function fetchItems(manual){
  if(!CONFIGURED||!authorized||flushing||fetching)return;
  fetching=true;
  try{const d=await post({pin,action:'items'});if(d.ok){acceptHistory(d);items=d.items;save(LS.items,items);save(LS.itemsAt,Date.now());role=d.role||'field';save(LS.role,role);if(manual)toast('서버 재고를 확인했습니다');}else if(d.error==='PIN'){authorized=false;showError('접근 실패','PIN이 없거나 맞지 않습니다. PIN을 다시 입력해주세요.');openSetup();}}
- catch(e){historyIssue='연결 확인 필요 · 마지막 조회 이력';if(manual)toast('연결 또는 기기 저장 실패 · 마지막 확인 재고 표시');}
+ catch(e){historyIssue='연결 확인 필요 · 마지막 조회 이력';if(manual)toast(errShort(e)+' · 마지막 확인 재고 표시');}
  finally{fetching=false;renderAll();}
 }
 async function flush(manual){
@@ -460,10 +477,27 @@ async function saveSetup(){
  if(!np){showError('접근 실패','PIN은 필수입니다. PIN을 입력해주세요.');return;}
  if(flushing||fetching){toast('처리 중입니다. 잠시 후 다시 시도해주세요.');return;}
  $('setupOk').disabled=true;
- try{const d=await post({pin:np,action:'items'});if(!d.ok){showError('접근 실패','PIN이 맞지 않습니다. 관리자에게 문의해주세요.');return;}
- save(LS.name,n);save(LS.pin,np);save('br_verified_pin',np);name=n;pin=np;authorized=true;role=d.role||'field';acceptHistory(d);items=d.items;save(LS.role,role);save(LS.items,items);save(LS.itemsAt,Date.now());$('setup').classList.add('hidden');renderAll();await flush();
- }catch(e){showError('접근 확인 실패','최초 PIN 확인에는 인터넷과 기기 저장이 필요합니다. 연결 상태를 확인해주세요.');}
- finally{$('setupOk').disabled=false;}
+ try{
+  // 1) 서버에서 PIN 확인 (여기서 실패하면 연결 문제이거나 서버 오류)
+  let d;
+  try{d=await post({pin:np,action:'items'},40000);}
+  catch(e){showError('서버 확인 실패',errDetail(e));return;}
+  if(!d||!d.ok){
+   if(d&&d.error==='PIN')showError('접근 실패','PIN이 맞지 않습니다. 관리자에게 문의해주세요.');
+   else showError('서버 오류',(d&&(d.msg||d.error))?String(d.msg||d.error).slice(0,200):'서버가 올바른 응답을 주지 않았습니다.');
+   return;
+  }
+  // 2) 이 기기에 저장 (여기서 실패하면 브라우저가 저장을 막은 것)
+  try{save(LS.name,n);save(LS.pin,np);save('br_verified_pin',np);}
+  catch(e){showError('기기 저장 실패','PIN은 맞지만 이 브라우저가 저장을 막고 있습니다 ('+((e&&e.name)||'Error')+'). 카카오톡·메신저 안의 브라우저라면 Chrome(또는 Safari)에서 열고, 시크릿 모드라면 일반 창에서 다시 시도해주세요.');return;}
+  name=n;pin=np;authorized=true;role=d.role||'field';
+  try{acceptHistory(d);items=Array.isArray(d.items)?d.items:[];save(LS.role,role);save(LS.items,items);save(LS.itemsAt,Date.now());}
+  catch(e){toast('PIN 확인은 끝났지만 재고 목록을 이 기기에 저장하지 못했습니다');}
+  $('setup').classList.add('hidden');
+  try{renderAll();}catch(e){console.error('renderAll',e&&e.name);}
+  toast(role==='master'?'마스터로 접속했습니다 · 구매 관리 버튼이 보입니다':role==='admin'?'관리자로 접속했습니다':'접속했습니다');
+  try{await flush();}catch(e){}
+ }finally{$('setupOk').disabled=false;}
 }
 
 function selectCategory(p){
