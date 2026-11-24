@@ -1,0 +1,76 @@
+name: IMK 장바구니 담기
+
+# 평일 오전 7시~오후 7시(한국시간) 30분마다 확인합니다. (GitHub 시간은 UTC 기준이라 아래처럼 적습니다)
+#  · 22~23시(UTC) = 한국 다음날 07~08시 / 00~10시(UTC) = 한국 09~19시
+# 담을 요청이 없으면 1분 안에 끝나고, 있을 때만 브라우저를 설치해서 담습니다.
+on:
+  schedule:
+    - cron: '*/30 22-23 * * 0-4'
+    - cron: '*/30 0-10 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: '실행 방식 (처음에는 discover → logincheck → dryrun → run 순서로)'
+        type: choice
+        default: run
+        options: [run, dryrun, logincheck, discover]
+      code:
+        description: 'discover 에서 검색해 볼 IMK 품목코드 (비밀번호 아님)'
+        required: false
+        type: string
+
+concurrency:
+  group: imk-cart
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  cart:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 담을 요청 확인
+        id: peek
+        working-directory: runner
+        env:
+          API_URL: ${{ secrets.API_URL }}
+          AUTO_TOKEN: ${{ secrets.AUTO_TOKEN }}
+          MODE: ${{ github.event.inputs.mode || 'run' }}
+        run: node peek.js
+
+      - name: 브라우저 준비
+        if: steps.peek.outputs.has_work == 'true'
+        working-directory: runner
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: 장바구니 담기
+        if: steps.peek.outputs.has_work == 'true'
+        working-directory: runner
+        env:
+          API_URL: ${{ secrets.API_URL }}
+          AUTO_TOKEN: ${{ secrets.AUTO_TOKEN }}
+          IMK_ID: ${{ secrets.IMK_ID }}
+          IMK_PW: ${{ secrets.IMK_PW }}
+          MODE: ${{ github.event.inputs.mode || 'run' }}
+          CODE: ${{ github.event.inputs.code }}
+        run: node imk_cart.js
+
+      # 진단 결과(화면 사진·구조)와 실패 사진. 계정 정보가 보일 수 있으므로 하루만 보관하고 이 저장소(비공개)에서만 내려받을 수 있습니다.
+      - name: 결과 파일 보관
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: imk-out
+          path: runner/out/
+          retention-days: 1
+          if-no-files-found: ignore
