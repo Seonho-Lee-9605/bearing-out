@@ -1,0 +1,14 @@
+{
+  "name": "bearing-cart-runner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "IMKmall 장바구니 자동 담기 (구글 시트 구매요청 → 장바구니)",
+  "scripts": {
+    "peek": "node peek.js",
+    "start": "node imk_cart.js",
+    "test": "node test/e2e.js"
+  },
+  "dependencies": {
+    "playwright": "1.63.0"
+  }
+}

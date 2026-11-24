@@ -1,0 +1,41 @@
+{
+  "_설명": "IMKmall 화면에 맞춘 선택자 설정입니다. 처음에는 비어 있고, 진단(discover) 결과를 보고 채웁니다. 채우고 시험이 끝나면 verified 를 true 로 바꿉니다. 아이디·비밀번호는 여기에 쓰지 않습니다.",
+  "verified": false,
+  "baseUrl": "https://www.imkmall.com",
+  "login": {
+    "url": "https://www.imkmall.com/login",
+    "idSelector": "",
+    "pwSelector": "",
+    "submitSelector": "",
+    "loggedInSelector": "",
+    "failureSelector": "",
+    "failureTexts": ["비밀번호", "아이디", "일치", "잘못", "실패", "확인해"],
+    "extraAuthSelectors": [],
+    "extraAuthTexts": ["인증번호", "보안문자", "자동입력방지", "OTP", "2단계", "추가 인증"]
+  },
+  "search": {
+    "url": "",
+    "pageUrl": "",
+    "inputSelector": "",
+    "submitSelector": "",
+    "resultRowSelector": "",
+    "noResultSelector": "",
+    "noResultText": "검색 결과가 없습니다",
+    "rowCodeSelector": "",
+    "rowNameSelector": "",
+    "rowPriceSelector": "",
+    "rowQtyInputSelector": "",
+    "rowCartButtonSelector": ""
+  },
+  "cart": {
+    "url": "",
+    "rowSelector": "",
+    "rowCodeSelector": "",
+    "rowQtyInputSelector": "",
+    "rowUpdateButtonSelector": ""
+  },
+  "afterAdd": {
+    "waitMs": 800,
+    "confirmSelectors": []
+  }
+}
