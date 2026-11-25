@@ -126,7 +126,7 @@ const $ = id => document.getElementById(id);
 const lget = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const lset = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 // 서버 주소: 출고 화면(index.html)이 쓰는 주소를 그대로 따라갑니다. (출고 화면을 한 번도 안 연 폰에서만 아래 기본값 사용)
-const API_FALLBACK = 'https://script.google.com/macros/s/AKfycbxRHvicONvIlxnjTudbnfHnkSFSrq8eFGUXM9VEmPUWtTte7J5fA-LVKoFOZ8fdhuy9/exec';
+const API_FALLBACK = 'https://script.google.com/macros/s/AKfycbzImLopWKF6a8XvdHv8uCVjLYbFaGtD2OcKNEwUpOaDWa85uCLbhXgNDqAj0x7AYNNR/exec';
 const API_URL = (lget('br_api_url') || '').startsWith('https://') ? lget('br_api_url') : API_FALLBACK;
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm = s => String(s || '').toLowerCase().replace(/[\s\-_.×*]/g, '');
