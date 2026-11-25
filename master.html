@@ -20,7 +20,7 @@ header{position:sticky;top:0;z-index:5;background:var(--p);color:#fff;padding:10
 header b{font-size:18px}
 .chip{background:rgba(255,255,255,.18);color:#fff;border:0;border-radius:8px;padding:8px 11px;font-size:14px;min-height:38px;text-decoration:none;display:inline-flex;align-items:center}
 .sub{font-size:12px;opacity:.85;margin:6px 0 8px}
-.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:0 -4px}
+.tabs{display:grid;grid-template-columns:repeat(6,1fr);gap:2px;margin:0 -4px}
 .tab{position:relative;background:transparent;border:0;border-bottom:4px solid transparent;color:#fff;padding:6px 2px 7px;opacity:.72;line-height:1.2}
 .tab b{display:block;font-size:19px}
 .tab span{display:block;font-size:11px}
@@ -53,6 +53,14 @@ main{max-width:720px;margin:0 auto;padding:10px 12px}
 .btn:disabled{opacity:.45}
 .mini{min-height:36px;padding:0 12px;border-radius:8px;border:1px solid #b9a25f;background:#fff;color:#6b4d0f;font-size:13px;font-weight:700}
 .req.buy .mini{border-color:#7aa9c4;color:#1f4d68}
+.req.ord{background:#ece8f8;border-color:#bfb5e3;color:#3d2f86}
+.req.ord .mini{border-color:#a99bd8;color:#3d2f86}
+.card.gV{border-left-color:#6a4fb3}
+.dl{margin-top:9px}
+.dl .lbl{font-size:12px;color:var(--muted);margin-bottom:4px}
+.dl .act{margin-top:0}
+.dl2{display:flex;gap:8px;margin-top:8px}
+.dl2 .mini{flex:1}
 .req.run{background:#e1eef6;border-color:#a9cbe0;color:#1f4d68}
 .req.ok{background:#e3f4ea;border-color:#9fd0b4;color:#145c38}
 .req.bad{background:#fdeae6;border-color:#e3a79d;color:#8f2a20}
@@ -91,6 +99,7 @@ main{max-width:720px;margin:0 auto;padding:10px 12px}
   <div id="loadErr" class="loaderr hidden"></div>
   <div id="runnerBanner" class="banner hidden"></div>
   <div id="unregBanner" class="banner bad hidden"></div>
+  <div id="verNote" class="banner bad hidden"></div>
   <div id="issueNote" class="note hidden"></div>
   <div id="intro" class="intro"></div>
   <input id="q" type="search" placeholder="번호·규격·위치로 찾기" autocomplete="off">
@@ -128,7 +137,7 @@ const post = obj => fetchT(API_URL, { method: 'POST', headers: { 'Content-Type':
 const CATS = { B:'베어링', UB:'유니트베어링', IB:'인서트베어링', PB:'플러머블럭', UBH:'유니트베어링 하우징' };
 const catName = code => { const m = /^([A-Za-z]+)-/.exec(code || ''); return m ? (CATS[m[1].toUpperCase()] || '') : ''; };
 const TABS = [
-  { g: 'A', t: '자주' }, { g: 'B', t: '보통' }, { g: 'C', t: '가끔' }, { g: 'D', t: '이력 없음' }, { g: 'R', t: '구매 목록' }
+  { g: 'A', t: '자주' }, { g: 'B', t: '보통' }, { g: 'C', t: '가끔' }, { g: 'D', t: '이력없음' }, { g: 'R', t: '구매목록' }, { g: 'V', t: '납품' }
 ];
 
 let pin = '', cands = [], data = null, tab = 'A', q = '', loadedAt = 0, busy = false, tt;
@@ -213,12 +222,22 @@ async function load(manual) {
   } finally { busy = false; }
 }
 
+// 아직 발주 전(장바구니 단계) 요청 / 발주를 마치고 납품을 기다리는 요청
+const ORDERED = '발주완료';
+const preOrder = () => data.requests.filter(r => r.st !== ORDERED);
+const ordered = () => data.requests.filter(r => r.st === ORDERED);
+// 분납 잔량 표시: note 'rem:받은수/주문수'
+const remInfo = note => { const m = /^rem:(\d+)\/(\d+)$/.exec(String(note || '')); return m ? { got: Number(m[1]), total: Number(m[2]) } : null; };
+const shownNote = r => (r.note && !/^prev=|^rem:/.test(r.note) && ['구매요청', '구매대기', ORDERED].indexOf(r.st) < 0) ? r.note : '';
+const featOk = () => data && (data.feat || 0) >= 4;
+const ordTs = ts => String(ts || '').slice(5, 16);
+
 function renderTabs() {
   const s = data.summary;
   $('tabs').innerHTML = TABS.map(x => {
-    const n = x.g === 'R' ? data.requests.length : s[x.g].low;
+    const n = x.g === 'R' ? preOrder().length : x.g === 'V' ? ordered().length : s[x.g].low;
     const alert = (x.g === 'A' && n > 0) ? ' alert' : '';
-    return '<button class="tab' + (tab === x.g ? ' on' : '') + '" data-g="' + x.g + '"><b>' + (x.g === 'R' ? '🛒' : x.g) + '</b><span>' + x.t + '</span>' + (n > 0 ? '<i class="' + alert.trim() + '">' + n + '</i>' : '') + '</button>';
+    return '<button class="tab' + (tab === x.g ? ' on' : '') + '" data-g="' + x.g + '"><b>' + (x.g === 'R' ? '🛒' : x.g === 'V' ? '📦' : x.g) + '</b><span>' + x.t + '</span>' + (n > 0 ? '<i class="' + alert.trim() + '">' + n + '</i>' : '') + '</button>';
   }).join('');
 }
 
@@ -228,7 +247,8 @@ function intro() {
   if (tab === 'B') return `구매횟수 <b>${st.bMin}~${st.aMin - 1}회</b>인 베어링 ${s.B.total}종 중, 재고 ${st.bStock}개 이하 ${s.B.low}종입니다.`;
   if (tab === 'C') return `구매횟수 <b>${st.cMin}~${st.bMin - 1}회</b>인 가끔 쓰는 베어링 ${s.C.total}종 중, 재고 ${st.cStock}개 이하 ${s.C.low}종입니다. 채우는 데 시간 여유가 있습니다.`;
   if (tab === 'D') return `구매횟수가 0회(구매 이력 없음)인 베어링 ${s.D.total}종 중 재고가 없는 ${s.D.low}종입니다. 알림은 가지 않으며 참고용입니다.`;
-  return '구매대기·구매 버튼으로 요청한 목록입니다. 자동 담기가 IMKmall 장바구니에 담고 결과를 표시합니다. 입고가 기록되면 목록에서 사라집니다. (결제는 IMKmall에서 직접)';
+  if (tab === 'V') return '아이마켓에서 발주를 마친 베어링입니다. 납품이 오면 <b>도착한 수량</b>을 확인하고 [입고]를 누르세요. 수량만큼 재고가 늘고 구매이력·구매횟수에 기록됩니다. 일부만 왔으면 온 수량만 입력하세요. 나머지는 목록에 남습니다.';
+  return '[구매대기]로 담아 둔 목록입니다. 자동 담기가 아이마켓 장바구니에 수량만큼 담습니다. 팀장님 결재 후 아이마켓에서 직접 발주했다면 [구매]를 눌러 <b>납품</b> 목록으로 보내세요. (결제·발주는 아이마켓에서 직접)';
 }
 
 // ---- 요청 상태 표시 ----
@@ -238,7 +258,8 @@ const ST = {
   '담는중': { cls: ' run', label: '⏳ 담는 중' },
   '담김': { cls: ' ok', label: '✓ 장바구니에 담김' },
   '미등록': { cls: ' bad', label: '❗ 미등록' },
-  '확인필요': { cls: ' chk', label: '⚠ 확인 필요' }
+  '확인필요': { cls: ' chk', label: '⚠ 확인 필요' },
+  '발주완료': { cls: ' ord', label: '📦 발주완료' }
 };
 const stInfo = st => ST[st] || { cls: '', label: st };
 const hhmm = iso => { const d = new Date(iso); return isNaN(d) ? '' : p2(d.getHours()) + ':' + p2(d.getMinutes()); };
@@ -254,20 +275,34 @@ function card(it) {
     '<div class="stock' + warn + '">' + it.k + '<small>재고</small></div></div>' +
     '<div class="meta">구매 <b>' + it.cnt + '회</b> · ' + it.g + '등급</div>' +
     imkLine(it.m) +
-    (r ? '<div class="req' + stInfo(r.st).cls + '"><span>' + esc(stInfo(r.st).label) + ' · ' + esc(r.q) + '개</span><button class="mini" data-act="cancel" data-id="' + esc(r.id) + '">취소</button></div>' + (r.note && !/^prev=/.test(r.note) && r.st !== '구매요청' && r.st !== '구매대기' ? '<div class="rnote">' + esc(r.note) + '</div>' : '') : '') +
+    (r ? '<div class="req' + stInfo(r.st).cls + '"><span>' + esc(stInfo(r.st).label) + ' · ' + esc(r.q) + '개</span><button class="mini" data-act="cancel" data-id="' + esc(r.id) + '">취소</button></div>' + (shownNote(r) ? '<div class="rnote">' + esc(shownNote(r)) + '</div>' : '') : '') +
+    (r && r.st === ORDERED ? '<div class="rnote">납품이 오면 📦 납품 탭에서 입고하세요.</div>' :
     '<div class="act"><div class="stepper"><button data-act="dec" aria-label="수량 줄이기">−</button><input type="number" inputmode="numeric" min="1" value="' + esc(qv) + '" aria-label="수량"><button data-act="inc" aria-label="수량 늘리기">＋</button></div>' +
-    '<button class="btn" data-act="wait">구매대기</button><button class="btn buy" data-act="buy">구매</button></div></div>';
+    '<button class="btn" data-act="wait">구매대기</button><button class="btn buy" data-act="order">구매</button></div>') + '</div>';
 }
 
 function reqCard(r) {
   const cn = catName(r.c), si = stInfo(r.st);
   const retry = (r.st === '미등록' || r.st === '확인필요') ? '<button class="mini" data-act="retry" data-id="' + esc(r.id) + '" data-c="' + esc(r.c) + '" data-q="' + esc(r.q) + '">다시 담기</button>' : '';
+  const order = r.st === '담는중' ? '' : '<button class="mini" data-act="promote" data-id="' + esc(r.id) + '" data-c="' + esc(r.c) + '" data-q="' + esc(r.q) + '" data-n="' + esc(r.n) + '">구매</button>';
   return '<div class="card"><div class="top"><div><div class="nm">' + esc(r.n) + '</div><div class="muted">' + (cn ? esc(cn) + ' · ' : '') + esc(r.c) + '</div></div>' +
     '<div class="stock warn" style="background:#edf0f3;color:#283b49">' + esc(r.q) + '<small>개</small></div></div>' +
     imkLine(r.m) +
-    '<div class="req' + si.cls + '"><span>' + esc(si.label) + '</span><span class="reqbtns">' + retry + '<button class="mini" data-act="cancel" data-id="' + esc(r.id) + '">취소</button></span></div>' +
-    (r.note && !/^prev=/.test(r.note) && r.st !== '구매요청' && r.st !== '구매대기' ? '<div class="rnote">' + esc(r.note) + '</div>' : '') +
+    '<div class="req' + si.cls + '"><span>' + esc(si.label) + '</span><span class="reqbtns">' + retry + order + '<button class="mini" data-act="cancel" data-id="' + esc(r.id) + '">취소</button></span></div>' +
+    (shownNote(r) ? '<div class="rnote">' + esc(shownNote(r)) + '</div>' : '') +
     '<div class="muted" style="margin-top:6px">' + esc(r.ts.slice(5, 16)) + ' · ' + esc(r.by) + '</div></div>';
+}
+
+// 납품 목록 카드: 도착한 수량을 확인하고 [입고]
+function deliverCard(r) {
+  const cn = catName(r.c), rem = remInfo(r.note);
+  const sub = rem ? '분납 잔량 · 이미 ' + rem.got + '/' + rem.total + '개 입고' : '발주 ' + ordTs(r.ts) + ' · ' + r.by;
+  return '<div class="card gV" data-id="' + esc(r.id) + '" data-q="' + esc(r.q) + '" data-n="' + esc(r.n) + '"><div class="top"><div><div class="nm">' + esc(r.n) + '</div><div class="muted">' + (cn ? esc(cn) + ' · ' : '') + esc(r.c) + '</div></div>' +
+    '<div class="stock warn" style="background:#ece8f8;color:#3d2f86">' + esc(r.q) + '<small>주문</small></div></div>' +
+    '<div class="req ord"><span>' + esc(stInfo(r.st).label) + ' · ' + esc(sub) + '</span></div>' +
+    '<div class="dl"><div class="lbl">도착한 수량</div><div class="act"><div class="stepper"><button data-act="dec" aria-label="수량 줄이기">−</button><input type="number" inputmode="numeric" min="1" value="' + esc(r.q) + '" aria-label="입고 수량"><button data-act="inc" aria-label="수량 늘리기">＋</button></div>' +
+    '<button class="btn buy" data-act="deliver">입고</button></div>' +
+    '<div class="dl2">' + (rem ? '' : '<button class="mini" data-act="revert" data-id="' + esc(r.id) + '">구매대기로 되돌리기</button>') + '<button class="mini" data-act="cancel" data-id="' + esc(r.id) + '">발주 취소</button></div></div></div>';
 }
 
 // 자동 담기 프로그램 상태 / 미등록 알림
@@ -298,6 +333,8 @@ function render() {
   $('sub').textContent = p2(at.getHours()) + ':' + p2(at.getMinutes()) + ' 기준 · 등급은 구매횟수로 자동 계산' + (rn0.peekAt ? ' · 자동 담기 확인 ' + hhmm(rn0.peekAt) : '');
   renderTabs();
   renderRunner();
+  $('verNote').classList.toggle('hidden', featOk());
+  $('verNote').innerHTML = '<b>서버 코드(Code.gs)가 예전 버전입니다.</b><br>[구매] 버튼과 납품 입고를 쓰려면 Apps Script에 새 Code.gs를 붙여넣고 [배포 관리 > 수정 > 새 버전]으로 다시 배포해주세요.';
   $('intro').innerHTML = intro();
   $('issueNote').classList.toggle('hidden', !(data.issues > 0));
   $('issueNote').textContent = '구매횟수 탭에 품목과 연결되지 않은 줄이 ' + data.issues + '개 있습니다. 구글 시트 메뉴 [베어링 관리 > 구매횟수 확인]을 실행해 E열을 확인하세요. 연결되지 않은 품목은 구매횟수 0회(D)로 분류됩니다.';
@@ -306,8 +343,11 @@ function render() {
   let html;
   if (tab === 'R') {
     const ord = { '미등록': 0, '확인필요': 1, '담는중': 2, '구매요청': 3, '구매대기': 4, '담김': 5 };
-    const rows = data.requests.filter(r => kw.every(t => norm(r.c + r.n + (r.m || '')).includes(t))).sort((a, b) => (ord[a.st] ?? 9) - (ord[b.st] ?? 9));
+    const rows = preOrder().filter(r => kw.every(t => norm(r.c + r.n + (r.m || '')).includes(t))).sort((a, b) => (ord[a.st] ?? 9) - (ord[b.st] ?? 9));
     html = rows.length ? rows.map(reqCard).join('') : '<div class="empty">담아 둔 구매 요청이 없습니다.</div>';
+  } else if (tab === 'V') {
+    const rows = ordered().filter(r => kw.every(t => norm(r.c + r.n).includes(t))).sort((a, b) => String(a.ts).localeCompare(String(b.ts)));
+    html = rows.length ? rows.map(deliverCard).join('') : '<div class="empty">' + (q ? '일치하는 발주가 없습니다.' : '납품을 기다리는 발주가 없습니다.<br>[구매]를 누른 베어링이 여기에 나타납니다.') + '</div>';
   } else {
     const rows = data.lists[tab].filter(hit);
     html = rows.length ? rows.map(card).join('') : '<div class="empty">' + (q ? '일치하는 품목이 없습니다.' : tab === 'D' ? '재고가 없는 이력 없음 품목이 없습니다.' : '재고가 소진된 품목이 없습니다. 👍') + '</div>';
@@ -325,18 +365,23 @@ async function addReq(card, mode) {
   const c = card.dataset.c, it = findItem(c);
   const qty = Number(card.querySelector('.stepper input').value);
   if (!Number.isSafeInteger(qty) || qty < 1 || qty > 100000) { toast('수량은 1 이상의 정수로 입력하세요'); return; }
+  if (mode === 'order') {
+    if (!featOk()) { toast('서버 코드(Code.gs)를 새 버전으로 배포해야 [구매]를 쓸 수 있습니다'); return; }
+    if (!confirm((it ? it.n : c) + ' · ' + qty + '개\n\n아이마켓에서 이미 발주하셨나요?\n[확인]을 누르면 납품 목록으로 이동하고, 더는 장바구니에 담지 않습니다.')) return;
+  }
   card.querySelectorAll('button').forEach(b => b.disabled = true);
   try {
     const d = await post({ pin, action: 'purchaseReq', op: 'add', mode, c, qty, by: myName() });
     if (d.ok) {
-      const st = mode === 'buy' ? '구매요청' : '구매대기';
+      const st = mode === 'order' ? ORDERED : '구매대기';
       const now = new Date(), ts = now.getFullYear() + '-' + p2(now.getMonth() + 1) + '-' + p2(now.getDate()) + ' ' + p2(now.getHours()) + ':' + p2(now.getMinutes()) + ':00';
       if (it) it.r = { id: d.id, st, q: qty, note: '' };
       const i = data.requests.findIndex(r => r.id === d.id);
       const rec = { id: d.id, c, n: it ? it.n : c, m: it ? it.m : '', q: qty, st, ts, by: myName(), note: '' };
       if (i >= 0) data.requests[i] = rec; else data.requests.unshift(rec);
-      toast(d.noImk ? 'IMK 코드가 없어 자동 담기에서 제외됩니다. 시트 G열에 입력하세요' : (mode === 'buy' ? '구매 요청을 기록했습니다' : '구매대기에 담았습니다'));
+      toast(mode !== 'order' && d.noImk ? 'IMK 코드가 없어 자동 담기에서 제외됩니다. 시트 G열에 입력하세요' : (mode === 'order' ? '발주완료로 기록했습니다 · 📦 납품 탭에서 입고하세요' : '구매대기에 담았습니다'));
       render();
+      if (mode === 'order') load(false); // 서버 기준(발주 시각 등)으로 다시 맞춤
     } else if (d.error === 'PIN' || d.error === 'FORBIDDEN') { pin = ''; showGate('PIN이 바뀐 것 같습니다. 마스터 PIN을 다시 입력해주세요.'); }
     else { toast(d.msg || '기록하지 못했습니다'); card.querySelectorAll('button').forEach(b => b.disabled = false); }
   } catch (e) { toast('인터넷 연결을 확인하세요'); card.querySelectorAll('button').forEach(b => b.disabled = false); }
@@ -348,7 +393,7 @@ async function cancelReq(id, btn) {
     if (d.ok || d.error === 'CLOSED' || d.error === 'NOT_FOUND') {
       data.requests = data.requests.filter(r => r.id !== id);
       ['A', 'B', 'C', 'D'].forEach(g => data.lists[g].forEach(it => { if (it.r && it.r.id === id) it.r = null; }));
-      toast(d.ok ? (d.inCart ? '취소했습니다. 이미 담긴 상품은 IMKmall 장바구니에서 직접 빼주세요' : '취소했습니다') : (d.msg || '이미 처리된 요청입니다'));
+      toast(d.ok ? (d.ordered ? '취소했습니다. 이미 낸 발주는 아이마켓에서 직접 취소해주세요' : d.inCart ? '취소했습니다. 이미 담긴 상품은 IMKmall 장바구니에서 직접 빼주세요' : '취소했습니다') : (d.msg || '이미 처리된 요청입니다'));
       render();
     } else { toast(d.msg || '취소하지 못했습니다'); btn.disabled = false; }
   } catch (e) { toast('인터넷 연결을 확인하세요'); btn.disabled = false; }
@@ -358,13 +403,65 @@ async function retryReq(btn) {
   const c = btn.dataset.c, qty = Number(btn.dataset.q) || 1;
   btn.disabled = true;
   try {
-    const d = await post({ pin, action: 'purchaseReq', op: 'add', mode: 'buy', c, qty, by: myName() });
+    const d = await post({ pin, action: 'purchaseReq', op: 'add', mode: 'wait', c, qty, by: myName() });
     if (d.ok) {
       const r = data.requests.find(x => x.id === d.id);
-      if (r) { r.st = '구매요청'; r.note = ''; r.q = qty; }
+      if (r) { r.st = '구매대기'; r.note = ''; r.q = qty; }
       toast(d.noImk ? 'IMK 코드가 아직 비어 있습니다. 시트 G열에 입력하세요' : '다시 담기를 요청했습니다');
       render();
     } else { toast(d.msg || '요청하지 못했습니다'); btn.disabled = false; }
+  } catch (e) { toast('인터넷 연결을 확인하세요'); btn.disabled = false; }
+}
+// 구매목록의 [구매]: 아이마켓에서 직접 발주를 마친 요청 → 납품 목록으로
+async function promoteReq(btn) {
+  const id = btn.dataset.id, c = btn.dataset.c, qty = Number(btn.dataset.q) || 1, n = btn.dataset.n || c;
+  if (!featOk()) { toast('서버 코드(Code.gs)를 새 버전으로 배포해야 [구매]를 쓸 수 있습니다'); return; }
+  if (!confirm(n + ' · ' + qty + '개\n\n아이마켓에서 이미 발주하셨나요?\n[확인]을 누르면 납품 목록으로 이동하고, 더는 장바구니에 담지 않습니다.')) return;
+  btn.disabled = true;
+  try {
+    const d = await post({ pin, action: 'purchaseReq', op: 'add', mode: 'order', c, qty, by: myName() });
+    if (d.ok) {
+      const r = data.requests.find(x => x.id === d.id || x.id === id);
+      if (r) { r.st = ORDERED; r.note = ''; r.q = qty; }
+      ['A', 'B', 'C', 'D'].forEach(g => data.lists[g].forEach(it => { if (it.r && it.r.id === (r ? r.id : id)) { it.r.st = ORDERED; it.r.q = qty; it.r.note = ''; } }));
+      toast('발주완료로 기록했습니다 · 📦 납품 탭에서 입고하세요');
+      render();
+      load(false); // 서버 기준으로 다시 맞춤
+    } else { toast(d.msg || '기록하지 못했습니다'); btn.disabled = false; }
+  } catch (e) { toast('인터넷 연결을 확인하세요'); btn.disabled = false; }
+}
+// 납품 목록의 [입고]: 도착한 수량만큼 재고 +, 구매이력·구매횟수 기록. 일부만 왔으면 나머지는 목록에 남음
+async function deliverReq(cardEl, btn) {
+  const id = cardEl.dataset.id, ordQ = Number(cardEl.dataset.q) || 0, n = cardEl.dataset.n || '';
+  const qty = Number(cardEl.querySelector('.stepper input').value);
+  if (!Number.isSafeInteger(qty) || qty < 1 || qty > 100000) { toast('입고 수량은 1 이상의 정수로 입력하세요'); return; }
+  if (!featOk()) { toast('서버 코드(Code.gs)를 새 버전으로 배포해야 입고할 수 있습니다'); return; }
+  const left = ordQ - qty;
+  const msg = n + '\n' + qty + '개를 입고합니다. (재고 +' + qty + ')' + (left > 0 ? '\n나머지 ' + left + '개는 납품 목록에 남습니다.' : '') + (left < 0 ? '\n※ 주문 수량(' + ordQ + '개)보다 많습니다.' : '');
+  if (!confirm(msg)) return;
+  cardEl.querySelectorAll('button').forEach(b => b.disabled = true);
+  try {
+    const d = await post({ pin, action: 'deliver', id, qty, by: myName() });
+    if (d.ok) {
+      toast('✓ ' + (d.n || n) + ' ' + d.qty + '개 입고' + (d.stock != null ? ' (재고 ' + d.stock + '개)' : '') + (d.left > 0 ? ' · 잔량 ' + d.left + '개 남음' : ''));
+      await load(false); // 재고·목록을 서버 기준으로 다시 불러옴
+    } else if (d.error === 'CLOSED' || d.error === 'NOT_FOUND') {
+      toast(d.msg || '이미 처리된 건입니다'); await load(false);
+    } else if (d.error === 'PIN' || d.error === 'FORBIDDEN') { pin = ''; showGate('PIN이 바뀐 것 같습니다. 마스터 PIN을 다시 입력해주세요.'); }
+    else { toast(d.msg || '입고하지 못했습니다'); cardEl.querySelectorAll('button').forEach(b => b.disabled = false); }
+  } catch (e) {
+    toast('인터넷 연결을 확인하세요. 입고가 됐는지 새로고침으로 확인하세요');
+    cardEl.querySelectorAll('button').forEach(b => b.disabled = false);
+  }
+}
+async function revertReq(btn) {
+  const id = btn.dataset.id;
+  if (!confirm('구매대기로 되돌립니다.\n자동 담기가 아이마켓 장바구니에 다시 담습니다.')) return;
+  btn.disabled = true;
+  try {
+    const d = await post({ pin, action: 'purchaseReq', op: 'revert', id });
+    if (d.ok) { toast('구매대기로 되돌렸습니다'); await load(false); }
+    else { toast(d.msg || '되돌리지 못했습니다'); btn.disabled = false; if (d.error === 'CLOSED' || d.error === 'NOT_FOUND') load(false); }
   } catch (e) { toast('인터넷 연결을 확인하세요'); btn.disabled = false; }
 }
 async function resumeRunner(btn) {
@@ -385,10 +482,13 @@ $('list').addEventListener('click', e => {
   const act = b.dataset.act, cardEl = b.closest('.card');
   if (act === 'cancel') { cancelReq(b.dataset.id, b); return; }
   if (act === 'retry') { retryReq(b); return; }
+  if (act === 'promote') { promoteReq(b); return; }
+  if (act === 'revert') { revertReq(b); return; }
+  if (act === 'deliver') { deliverReq(cardEl, b); return; }
   const inp = cardEl.querySelector('.stepper input');
   if (act === 'dec') inp.value = Math.max(1, (Number(inp.value) || 1) - 1);
   else if (act === 'inc') inp.value = (Number(inp.value) || 0) + 1;
-  else if (act === 'wait' || act === 'buy') addReq(cardEl, act);
+  else if (act === 'wait' || act === 'order') addReq(cardEl, act);
 });
 $('list').addEventListener('focusin', e => { if (e.target.matches('.stepper input')) e.target.select(); });
 $('refresh').onclick = () => load(true);
